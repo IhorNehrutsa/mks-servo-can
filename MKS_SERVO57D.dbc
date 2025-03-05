@@ -1,0 +1,213 @@
+VERSION ""
+
+NS_ :
+	NS_DESC_
+	CM_
+	BA_DEF_
+	BA_
+	VAL_
+	CAT_DEF_
+	CAT_
+	FILTER
+	BA_DEF_DEF_
+	EV_DATA_
+	ENVVAR_DATA_
+	SGTYPE_
+	SGTYPE_VAL_
+	BA_DEF_SGTYPE_
+	BA_SGTYPE_
+	SIG_TYPE_REF_
+	VAL_TABLE_
+	SIG_GROUP_
+	SIG_VALTYPE_
+	SIGTYPE_VALTYPE_
+	BO_TX_BU_
+	BA_DEF_REL_
+	BA_REL_
+	BA_DEF_DEF_REL_
+	BU_SG_REL_
+	BU_EV_REL_
+	BU_BO_REL_
+	SG_MUL_VAL_
+
+BS_:
+
+BU_: MKS_SERVO57D Controller
+
+BO_ 1 ReadStatusParam1: 8 MKS_SERVO57D
+ SG_ Carry : 0|32@1+ (1,0) [0|0xFFFFFFFF] "" Vector__XXX
+ SG_ Value : 32|16@1+ (1,0) [0|0x3FFF] "" Vector__XXX
+
+BO_ 2 ReadStatusParam2: 8 MKS_SERVO57D
+ SG_ Value : 0|48@1+ (1,0) [0|0xFFFFFFFFFFFF] "" Vector__XXX
+
+BO_ 3 ReadRealTimeSpeed: 8 MKS_SERVO57D
+ SG_ Speed : 0|16@1+ (1,0) [-32768|32767] "RPM" Vector__XXX
+
+BO_ 4 ReadPulsesReceived: 8 MKS_SERVO57D
+ SG_ Pulses : 0|32@1+ (1,0) [0|0xFFFFFFFF] "" Vector__XXX
+
+BO_ 5 ReadIOStatus: 8 MKS_SERVO57D
+ SG_ IOStatus : 0|8@1+ (1,0) [0|255] "" Vector__XXX
+
+BO_ 6 ReadRAWEncoderValue: 8 MKS_SERVO57D
+ SG_ RAWValue : 0|48@1+ (1,0) [0|0xFFFFFFFFFFFF] "" Vector__XXX
+
+BO_ 7 ReadMotorShaftAngleError: 8 MKS_SERVO57D
+ SG_ Error : 0|32@1+ (1,0) [-2147483648|2147483647] "degrees" Vector__XXX
+
+BO_ 8 ReadEnPinStatus: 8 MKS_SERVO57D
+ SG_ EnStatus : 0|8@1+ (1,0) [0|1] "" Vector__XXX
+
+BO_ 9 ReadGoBackToZeroStatus: 8 MKS_SERVO57D
+ SG_ ZeroStatus : 0|8@1+ (1,0) [0|2] "" Vector__XXX
+
+BO_ 10 ReleaseProtectionState: 8 MKS_SERVO57D
+ SG_ ReleaseStatus : 0|8@1+ (1,0) [0|1] "" Vector__XXX
+
+BO_ 11 ReadMotorShaftProtectionState: 8 MKS_SERVO57D
+ SG_ ProtectionStatus : 0|8@1+ (1,0) [0|1] "" Vector__XXX
+
+BO_ 12 CalibrateEncoder: 8 MKS_SERVO57D
+ SG_ CalibrateStatus : 0|8@1+ (1,0) [0|2] "" Vector__XXX
+
+BO_ 13 SetWorkMode: 8 MKS_SERVO57D
+ SG_ WorkMode : 0|8@1+ (1,0) [0|5] "" Vector__XXX
+ SG_ SetStatus : 8|8@1+ (1,0) [0|1] "" Vector__XXX
+
+BO_ 14 SetWorkingCurrent: 8 MKS_SERVO57D
+ SG_ WorkingCurrent : 0|16@1+ (1,0) [0|5200] "mA" Vector__XXX
+ SG_ SetStatus : 16|8@1+ (1,0) [0|1] "" Vector__XXX
+
+BO_ 15 SetHoldingCurrentPercentage: 8 MKS_SERVO57D
+ SG_ HoldingCurrentPercentage : 0|8@1+ (1,0) [0|8] "" Vector__XXX
+ SG_ SetStatus : 8|8@1+ (1,0) [0|1] "" Vector__XXX
+
+BO_ 16 SetSubdivision: 8 MKS_SERVO57D
+ SG_ Subdivision : 0|8@1+ (1,0) [0|255] "" Vector__XXX
+ SG_ SetStatus : 8|8@1+ (1,0) [0|1] "" Vector__XXX
+
+BO_ 17 SetEnPinActive: 8 MKS_SERVO57D
+ SG_ EnPinActive : 0|8@1+ (1,0) [0|2] "" Vector__XXX
+ SG_ SetStatus : 8|8@1+ (1,0) [0|1] "" Vector__XXX
+
+BO_ 18 SetMotorRotationDirection: 8 MKS_SERVO57D
+ SG_ MotorDirection : 0|8@1+ (1,0) [0|1] "" Vector__XXX
+ SG_ SetStatus : 8|8@1+ (1,0) [0|1] "" Vector__XXX
+
+BO_ 19 SetAutoTurnOffScreen: 8 MKS_SERVO57D
+ SG_ AutoTurnOff : 0|8@1+ (1,0) [0|1] "" Vector__XXX
+ SG_ SetStatus : 8|8@1+ (1,0) [0|1] "" Vector__XXX
+
+BO_ 20 SetMotorShaftProtection: 8 MKS_SERVO57D
+ SG_ ProtectionEnable : 0|8@1+ (1,0) [0|1] "" Vector__XXX
+ SG_ SetStatus : 8|8@1+ (1,0) [0|1] "" Vector__XXX
+
+BO_ 21 SetSubdivisionInterpolation: 8 MKS_SERVO57D
+ SG_ InterpolationEnable : 0|8@1+ (1,0) [0|1] "" Vector__XXX
+ SG_ SetStatus : 8|8@1+ (1,0) [0|1] "" Vector__XXX
+
+BO_ 22 SetCANBitRate: 8 MKS_SERVO57D
+ SG_ CANBitRate : 0|8@1+ (1,0) [0|3] "" Vector__XXX
+ SG_ SetStatus : 8|8@1+ (1,0) [0|1] "" Vector__XXX
+
+BO_ 23 SetCANID: 8 MKS_SERVO57D
+ SG_ CANID : 0|16@1+ (1,0) [0|2047] "" Vector__XXX
+ SG_ SetStatus : 16|8@1+ (1,0) [0|1] "" Vector__XXX
+
+BO_ 24 SetSlaveRespondActive: 8 MKS_SERVO57D
+ SG_ RespondEnable : 0|8@1+ (1,0) [0|1] "" Vector__XXX
+ SG_ ActiveEnable : 8|8@1+ (1,0) [0|1] "" Vector__XXX
+ SG_ SetStatus : 16|8@1+ (1,0) [0|1] "" Vector__XXX
+
+BO_ 25 SetKeyLock: 8 MKS_SERVO57D
+ SG_ KeyLock : 0|8@1+ (1,0) [0|1] "" Vector__XXX
+ SG_ SetStatus : 8|8@1+ (1,0) [0|1] "" Vector__XXX
+
+BO_ 26 SetGroupID: 8 MKS_SERVO57D
+ SG_ GroupID : 0|8@1+ (1,0) [0|255] "" Vector__XXX
+ SG_ SetStatus : 8|8@1+ (1,0) [0|1] "" Vector__XXX
+
+BO_ 27 WriteIOPort: 8 MKS_SERVO57D
+ SG_ OUT2Mask : 0|1@1+ (1,0) [0|1] "" Vector__XXX
+ SG_ OUT1Mask : 1|1@1+ (1,0) [0|1] "" Vector__XXX
+ SG_ OUT2Value : 2|1@1+ (1,0) [0|1] "" Vector__XXX
+ SG_ OUT1Value : 3|1@1+ (1,0) [0|1] "" Vector__XXX
+ SG_ WriteStatus : 4|8@1+ (1,0) [0|1] "" Vector__XXX
+
+BO_ 28 SetHomeCommand: 8 MKS_SERVO57D
+ SG_ HomeTrig : 0|1@1+ (1,0) [0|1] "" Vector__XXX
+ SG_ HomeDir : 1|1@1+ (1,0) [0|1] "" Vector__XXX
+ SG_ HomeSpeed : 2|16@1+ (1,0) [0|65535] "RPM" Vector__XXX
+ SG_ EndLimit : 4|1@1+ (1,0) [0|1] "" Vector__XXX
+ SG_ HomeMode : 5|1@1+ (1,0) [0|1] "" Vector__XXX
+ SG_ SetStatus : 6|8@1+ (1,0) [0|1] "" Vector__XXX
+
+BO_ 29 SetNoLimitGoHome: 8 MKS_SERVO57D
+ SG_ ReverseAngle : 0|32@1+ (1,0) [0|0xFFFFFFFF] "" Vector__XXX
+ SG_ HmMa : 32|16@1+ (1,0) [0|5200] "mA" Vector__XXX
+ SG_ SetStatus : 48|8@1+ (1,0) [0|1] "" Vector__XXX
+
+BO_ 30 SetLimitPortRemap: 8 MKS_SERVO57D
+ SG_ RemapEnable : 0|8@1+ (1,0) [0|1] "" Vector__XXX
+ SG_ SetStatus : 8|8@1+ (1,0) [0|1] "" Vector__XXX
+
+BO_ 31 Set0ModeCommand: 8 MKS_SERVO57D
+ SG_ 0Mode : 0|8@1+ (1,0) [0|2] "" Vector__XXX
+ SG_ Set0Enable : 8|8@1+ (1,0) [0|2] "" Vector__XXX
+ SG_ 0Speed : 16|8@1+ (1,0) [0|4] "" Vector__XXX
+ SG_ 0Dir : 24|8@1+ (1,0) [0|1] "" Vector__XXX
+ SG_ SetStatus : 32|8@1+ (1,0) [0|1] "" Vector__XXX
+
+BO_ 32 RestoreDefaultParameters: 8 MKS_SERVO57D
+ SG_ RestoreStatus : 0|8@1+ (1,0) [0|1] "" Vector__XXX
+
+BO_ 33 RestartMotor: 8 MKS_SERVO57D
+ SG_ RestartStatus : 0|8@1+ (1,0) [0|1] "" Vector__XXX
+
+BO_ 34 EnTriggerSingleTurnZero: 8 MKS_SERVO57D
+ SG_ EnTrigger : 0|1@1+ (1,0) [0|1] "" Vector__XXX
+ SG_ PositionErrorProtection : 1|1@1+ (1,0) [0|1] "" Vector__XXX
+ SG_ Tim : 2|16@1+ (1,0) [0|65535] "ms" Vector__XXX
+ SG_ Errors : 4|16@1+ (1,0) [0|65535] "" Vector__XXX
+ SG_ SetStatus : 6|8@1+ (1,0) [0|1] "" Vector__XXX
+
+BO_ 35 ReadSystemParameter: 8 MKS_SERVO57D
+ SG_ ParameterCode : 0|8@1+ (1,0) [0|255] "" Vector__XXX
+ SG_ ParameterValue : 8|32@1+ (1,0) [0|0xFFFFFFFF] "" Vector__XXX
+
+CM_ BO_ 1 "Read status parameter command 1";
+CM_ BO_ 2 "Read status parameter command 2";
+CM_ BO_ 3 "Read real-time speed of the motor";
+CM_ BO_ 4 "Read the number of pulses received";
+CM_ BO_ 5 "Read the IO ports status";
+CM_ BO_ 6 "Read the RAW encoder value";
+CM_ BO_ 7 "Read the error of the motor shaft angle";
+CM_ BO_ 8 "Read the En pins status";
+CM_ BO_ 9 "Read the go back to zero status when power on";
+CM_ BO_ 10 "Release the motor shaft locked-rotor protection state";
+CM_ BO_ 11 "Read the motor shaft protection state";
+CM_ BO_ 12 "Calibrate the encoder";
+CM_ BO_ 13 "Set the work mode";
+CM_ BO_ 14 "Set the working current";
+CM_ BO_ 15 "Set the holding current percentage";
+CM_ BO_ 16 "Set subdivision";
+CM_ BO_ 17 "Set the active of the En pin";
+CM_ BO_ 18 "Set the direction of motor rotation";
+CM_ BO_ 19 "Set auto turn off the screen function";
+CM_ BO_ 20 "Set the motor shaft locked-rotor protection function";
+CM_ BO_ 21 "Set the subdivision interpolation function";
+CM_ BO_ 22 "Set the CAN bit rate";
+CM_ BO_ 23 "Set the CAN ID";
+CM_ BO_ 24 "Set the slave respond and active";
+CM_ BO_ 25 "Set the key lock or unlock";
+CM_ BO_ 26 "Set the group ID";
+CM_ BO_ 27 "Write IO port command";
+CM_ BO_ 28 "Set Home command";
+CM_ BO_ 29 "Set the parameter of 'noLimit' go home";
+CM_ BO_ 30 "Set limit port remap";
+CM_ BO_ 31 "Set 0_Mode command";
+CM_ BO_ 32 "Restore the default parameter";
+CM_ BO_ 33 "Restart the motor";
+CM_ BO_ 34 "En triggers single-turn zero return and position error protection function";
+CM_ BO_ 35 "Read system parameter command";
