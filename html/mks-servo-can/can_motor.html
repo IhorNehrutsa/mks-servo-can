@@ -69,26 +69,26 @@ def _validate_speed(self, speed):
 def _validate_acceleration(self, acceleration):
     if acceleration &lt; 0 or acceleration &gt; MAX_ACCELERATION:
         raise invalid_aceleration_error(f&#34;Acceleration must be between 0 and {MAX_ACCELERATION}&#34;)
-    
+
 def _validate_pulses(self, pulses):
     if pulses &lt; 0 or pulses &gt; MAX_PULSES:
         raise invalid_pulses_error(&#34;Pulses must be between 0 and 16777215&#34;)
 
-def query_motor_status(self): 
+def query_motor_status(self):
     &#34;&#34;&#34;
     Runs the emergency motor stop
-    
+
     Returns:
         SuccessStatus: The success result of the command.
 
     Raises:
-        can.CanError: If there is an error in sending the CAN message.    
-    &#34;&#34;&#34;  
-    return self.specialized_state(MksCommands.QUERY_MOTOR_STATUS_COMMAND, 
-        MotorStatus, motor_status_error)                   
+        can.CanError: If there is an error in sending the CAN message.
+    &#34;&#34;&#34;
+    return self.specialized_state(MksCommands.QUERY_MOTOR_STATUS_COMMAND,
+        MotorStatus, motor_status_error)
 
 def enable_motor(self, enable: Enable):
-    return self.set_generic_status(MksCommands.ENABLE_MOTOR_COMMAND, enable)   
+    return self.set_generic_status(MksCommands.ENABLE_MOTOR_COMMAND, enable)
 
 def emergency_stop_motor(self):
     &#34;&#34;&#34;
@@ -98,15 +98,15 @@ def emergency_stop_motor(self):
         SuccessStatus: The success result of the command.
 
     Raises:
-        can.CanError: If there is an error in sending the CAN message.    
-    &#34;&#34;&#34;      
-    return self.set_generic_status(MksCommands.EMERGENCY_STOP_COMMAND)   
+        can.CanError: If there is an error in sending the CAN message.
+    &#34;&#34;&#34;
+    return self.set_generic_status(MksCommands.EMERGENCY_STOP_COMMAND)
 
 def run_motor_in_speed_mode(self, direction: Direction, speed, acceleration):
     &#34;&#34;&#34;
     Sets the speed mode, where the motor can be run with a fixed acceleration and speed.
 
-    Args:        
+    Args:
         direction (Direction): The direction of the motor, CCW or CW.
         speed (int): The speed in the range of 0 to 3000 RPMs.
         acceleration (int): The acceleration in the range of 0 to 255.
@@ -115,8 +115,8 @@ def run_motor_in_speed_mode(self, direction: Direction, speed, acceleration):
         SuccessStatus: The success result of the command.
 
     Raises:
-        can.CanError: If there is an error in sending the CAN message.    
-    &#34;&#34;&#34;             
+        can.CanError: If there is an error in sending the CAN message.
+    &#34;&#34;&#34;
     self._validate_direction(direction)
     self._validate_speed(speed)
     self._validate_acceleration(acceleration)
@@ -128,44 +128,44 @@ def run_motor_in_speed_mode(self, direction: Direction, speed, acceleration):
         speed &amp; 0xFF,
         acceleration
     ]
-    return self.set_generic_status(MksCommands.RUN_MOTOR_SPEED_MODE_COMMAND, cmd)       
+    return self.set_generic_status(MksCommands.RUN_MOTOR_SPEED_MODE_COMMAND, cmd)
 
 def save_clean_in_speed_mode(self, state: SaveCleanState):
     &#34;&#34;&#34;
     Sets the save/clean parameter state in speed mode
 
-    Args:        
+    Args:
         state (SaveCleanState): The save/clean paramete state
 
     Returns:
         SuccessStatus: The success result of the command.
 
     Raises:
-        can.CanError: If there is an error in sending the CAN message.    
-    &#34;&#34;&#34;         
-    return self.set_generic_status(MksCommands.SAVE_CLEAN_IN_SPEED_MODE_COMMAND)   
+        can.CanError: If there is an error in sending the CAN message.
+    &#34;&#34;&#34;
+    return self.set_generic_status(MksCommands.SAVE_CLEAN_IN_SPEED_MODE_COMMAND)
 
 def is_motor_running(self):
     &#34;&#34;&#34;
     Returns the current running state of the motor
     Returns:
-        boolean: The running state of the motor. 
-    &#34;&#34;&#34;       
+        boolean: The running state of the motor.
+    &#34;&#34;&#34;
     return self._motor_run_status == RunMotorResult.RunStarting
 
-def wait_for_motor_idle(self, timeout):    
+def wait_for_motor_idle(self, timeout):
     &#34;&#34;&#34;
     Waits until the motor stops running or the timeout time is meet.
 
-    Args:        
-        timeout (double): Maximum number of seconds to wait for the motor to stop.        
+    Args:
+        timeout (double): Maximum number of seconds to wait for the motor to stop.
 
     Returns:
         boolean: The running state of the motor at the end of this method.
 
     Raises:
-        can.CanError: If there is an error in sending the CAN message.    
-    &#34;&#34;&#34;     
+        can.CanError: If there is an error in sending the CAN message.
+    &#34;&#34;&#34;
     start_time = time.perf_counter()
     while (time.perf_counter() - start_time &lt; timeout) and self.is_motor_running():
         time.sleep(0.1)  # Small sleep to prevent busy waiting
@@ -182,21 +182,21 @@ def run_motor_relative_motion_by_pulses(self, direction: Direction, speed, accel
         pulses (int): The motor run steps, the value range is 0 to 0xFFFFFF.
 
     Returns:
-        int: If successful, returns the status of the motor, at the end of the command execution. 
-        None: If there&#39;s an error in sending the message, a self.timeout occurs, or the response is 
+        int: If successful, returns the status of the motor, at the end of the command execution.
+        None: If there&#39;s an error in sending the message, a self.timeout occurs, or the response is
     invalid.
 
     Raises:
         can.CanError: If there is an error in sending the CAN message.
-    
-    Note: If the motor is rotating more than 1000 RPM, it is not a good idea to stop the motor inmediately.
-    &#34;&#34;&#34;        
+
+    Note: If the motor is rotating more than 1000 RPM, it is not a good idea to stop the motor immediately.
+    &#34;&#34;&#34;
     if self.is_motor_running:
-        raise motor_already_running_error(&#34;&#34;)    
+        raise motor_already_running_error(&#34;&#34;)
     self._validate_direction(direction)
     self._validate_speed(speed)
     self._validate_pulses(pulses)
-  
+
     direction_value = 0x80 if direction == Direction.CW else 0
 
     cmd = [
@@ -207,14 +207,14 @@ def run_motor_relative_motion_by_pulses(self, direction: Direction, speed, accel
         (pulses &gt;&gt; 8) &amp; 0xFF,
         (pulses &gt;&gt; 0) &amp; 0xFF,
     ]
-    tmp = self.set_generic(MksCommands.RUN_MOTOR_RELATIVE_MOTION_BY_PULSES_COMMAND, self.GENERIC_RESPONSE_LENGTH, cmd)  
-    status_int = int.from_bytes(tmp[1:2], byteorder=&#39;big&#39;)  
+    tmp = self.set_generic(MksCommands.RUN_MOTOR_RELATIVE_MOTION_BY_PULSES_COMMAND, self.GENERIC_RESPONSE_LENGTH, cmd)
+    status_int = int.from_bytes(tmp[1:2], byteorder=&#39;big&#39;)
     rslt = {}
     try:
         rslt[&#39;status&#39;] = RunMotorResult(status_int)
     except ValueError:
-        raise motor_status_error(f&#34;No enum member with value {status_int}&#34;)                     
-    return rslt   
+        raise motor_status_error(f&#34;No enum member with value {status_int}&#34;)
+    return rslt
 
 def run_motor_absolute_motion_by_pulses(self, speed, acceleration, absolute_pulses):
     &#34;&#34;&#34;
@@ -226,20 +226,20 @@ def run_motor_absolute_motion_by_pulses(self, speed, acceleration, absolute_puls
         absolute_pulses (int): The absolute pulses, the value range is -8388607 to +8388607.
 
     Returns:
-        int: If successful, returns the status of the motor, at the end of the command execution. 
-        None: If there&#39;s an error in sending the message, a self.timeout occurs, or the response is 
+        int: If successful, returns the status of the motor, at the end of the command execution.
+        None: If there&#39;s an error in sending the message, a self.timeout occurs, or the response is
     invalid.
 
     Raises:
         can.CanError: If there is an error in sending the CAN message.
-    
-    Note: If the motor is rotating more than 1000 RPM, it is not a good idea to stop the motor inmediately.
-    &#34;&#34;&#34;        
+
+    Note: If the motor is rotating more than 1000 RPM, it is not a good idea to stop the motor immediately.
+    &#34;&#34;&#34;
     if self.is_motor_running:
-        raise motor_already_running_error(&#34;&#34;)    
+        raise motor_already_running_error(&#34;&#34;)
     self._validate_speed(speed)
     self._validate_pulses(absolute_pulses)
-  
+
     cmd = [
         (speed &gt;&gt; 8),
         speed &amp; 0xFF,
@@ -248,20 +248,20 @@ def run_motor_absolute_motion_by_pulses(self, speed, acceleration, absolute_puls
         (absolute_pulses &gt;&gt; 8) &amp; 0xFF,
         (absolute_pulses &gt;&gt; 0) &amp; 0xFF,
     ]
-    tmp = self.set_generic(MksCommands.RUN_MOTOR_ABSOLUTE_MOTION_BY_PULSES_COMMAND, self.GENERIC_RESPONSE_LENGTH, cmd)  
-    status_int = int.from_bytes(tmp[1:2], byteorder=&#39;big&#39;)  
+    tmp = self.set_generic(MksCommands.RUN_MOTOR_ABSOLUTE_MOTION_BY_PULSES_COMMAND, self.GENERIC_RESPONSE_LENGTH, cmd)
+    status_int = int.from_bytes(tmp[1:2], byteorder=&#39;big&#39;)
     rslt = {}
     try:
         rslt[&#39;status&#39;] = RunMotorResult(status_int)
     except ValueError:
-        raise motor_status_error(f&#34;No enum member with value {status_int}&#34;)                     
-    return rslt      
+        raise motor_status_error(f&#34;No enum member with value {status_int}&#34;)
+    return rslt
 
 
 
 def run_motor_relative_motion_by_axis(self, speed, acceleration, relative_axis):
     &#34;&#34;&#34;
-    The motor runs relative to the axis with the set acceleration and speed. The axis is the encoder value in 
+    The motor runs relative to the axis with the set acceleration and speed. The axis is the encoder value in
     addition mode. It can be read using read_encoder_value_addition method.
 
     Args:
@@ -270,76 +270,76 @@ def run_motor_relative_motion_by_axis(self, speed, acceleration, relative_axis):
         relative_axis (int): The relative axis, the value range is -8388607 to +8388607.
 
     Returns:
-        int: If successful, returns the status of the motor, at the end of the command execution. 
-        None: If there&#39;s an error in sending the message, a self.timeout occurs, or the response is 
+        int: If successful, returns the status of the motor, at the end of the command execution.
+        None: If there&#39;s an error in sending the message, a self.timeout occurs, or the response is
     invalid.
 
     Raises:
         can.CanError: If there is an error in sending the CAN message.
 
-    Note: In this mode, the axis error is about +-15. It is suggested running with 64 subdivisions.    
-    Note: If the motor is rotating more than 1000 RPM, it is not a good idea to stop the motor inmediately.
-    &#34;&#34;&#34;    
+    Note: In this mode, the axis error is about +-15. It is suggested running with 64 subdivisions.
+    Note: If the motor is rotating more than 1000 RPM, it is not a good idea to stop the motor immediately.
+    &#34;&#34;&#34;
     if self.is_motor_running:
-        raise motor_already_running_error(&#34;&#34;)    
+        raise motor_already_running_error(&#34;&#34;)
     self._validate_speed(speed)
     self._validate_acceleration(acceleration)
 
-    # TODO: Should we add a check to avoid stopping the motor inmediately when running at more than 1000 RPMs?
+    # TODO: Should we add a check to avoid stopping the motor immediately when running at more than 1000 RPMs?
     cmd = [
         ((speed &gt;&gt; 8) &amp; 0b1111),
         speed &amp; 0xFF,
-        acceleration,        
+        acceleration,
         (relative_axis &gt;&gt; 16) &amp; 0xFF,
         (relative_axis &gt;&gt; 8) &amp; 0xFF,
         (relative_axis &gt;&gt; 0) &amp; 0xFF,
     ]
-    tmp = self.set_generic(MksCommands.RUN_MOTOR_RELATIVE_MOTION_BY_AXIS_COMMAND, self.GENERIC_RESPONSE_LENGTH, cmd)  
-    status_int = int.from_bytes(tmp[1:2], byteorder=&#39;big&#39;)  
-    rslt = {}    
+    tmp = self.set_generic(MksCommands.RUN_MOTOR_RELATIVE_MOTION_BY_AXIS_COMMAND, self.GENERIC_RESPONSE_LENGTH, cmd)
+    status_int = int.from_bytes(tmp[1:2], byteorder=&#39;big&#39;)
+    rslt = {}
     try:
         rslt[&#39;status&#39;] = RunMotorResult(status_int)
     except ValueError:
-        raise motor_status_error(f&#34;No enum member with value {status_int}&#34;)                                       
-    return rslt    
+        raise motor_status_error(f&#34;No enum member with value {status_int}&#34;)
+    return rslt
 
 def run_motor_absolute_motion_by_axis(self, speed, acceleration, absolute_axis):
     &#34;&#34;&#34;
-    The motor runs to the specified axis with the set acceleration and speed. The axis is the encoder value in 
+    The motor runs to the specified axis with the set acceleration and speed. The axis is the encoder value in
     addition mode. It can be read using read_encoder_value_addition method.
 
     Args:
         speed (int): The speed in the range of 0 to 3000 RPMs.
         acceleration (int): The acceleration in the range of 0 to 255.
         absolute_axis (int): The relative axis, the value range is -8388607 to +8388607.
-        
+
     Returns:
-        int: If successful, returns the status of the motor, at the end of the command execution. 
-        None: If there&#39;s an error in sending the message, a self.timeout occurs, or the response is 
+        int: If successful, returns the status of the motor, at the end of the command execution.
+        None: If there&#39;s an error in sending the message, a self.timeout occurs, or the response is
     invalid.
 
     Raises:
         can.CanError: If there is an error in sending the CAN message.
 
-    Note: In this mode, the axis error is about +-15. It is suggested running with 64 subdivisions.    
-    Note: If the motor is rotating more than 1000 RPM, it is not a good idea to stop the motor inmediately.
+    Note: In this mode, the axis error is about +-15. It is suggested running with 64 subdivisions.
+    Note: If the motor is rotating more than 1000 RPM, it is not a good idea to stop the motor immediately.
     &#34;&#34;&#34;
     if self.is_motor_running():
-        raise motor_already_running_error(&#34;&#34;)    
+        raise motor_already_running_error(&#34;&#34;)
     self._validate_speed(speed)
     self._validate_acceleration(acceleration)
-  
-    # TODO: Should we add a check to avoid stopping the motor inmediately when running at more than 1000 RPMs?
+
+    # TODO: Should we add a check to avoid stopping the motor immediately when running at more than 1000 RPMs?
     cmd = [
         ((speed &gt;&gt; 8) &amp; 0b1111),
         speed &amp; 0xFF,
-        acceleration,        
+        acceleration,
         (absolute_axis &gt;&gt; 16) &amp; 0xFF,
         (absolute_axis &gt;&gt; 8) &amp; 0xFF,
         (absolute_axis &gt;&gt; 0) &amp; 0xFF,
     ]
-    tmp = self.set_generic(MksCommands.RUN_MOTOR_ABSOLUTE_MOTION_BY_AXIS_COMMAND, self.GENERIC_RESPONSE_LENGTH, cmd)  
-    status_int = int.from_bytes(tmp[1:2], byteorder=&#39;big&#39;)      
+    tmp = self.set_generic(MksCommands.RUN_MOTOR_ABSOLUTE_MOTION_BY_AXIS_COMMAND, self.GENERIC_RESPONSE_LENGTH, cmd)
+    status_int = int.from_bytes(tmp[1:2], byteorder=&#39;big&#39;)
     try:
         return RunMotorResult(status_int)
     except ValueError:
@@ -380,8 +380,8 @@ def run_motor_absolute_motion_by_axis(self, speed, acceleration, absolute_axis):
         SuccessStatus: The success result of the command.
 
     Raises:
-        can.CanError: If there is an error in sending the CAN message.    
-    &#34;&#34;&#34;      
+        can.CanError: If there is an error in sending the CAN message.
+    &#34;&#34;&#34;
     return self.set_generic_status(MksCommands.EMERGENCY_STOP_COMMAND)   </code></pre>
 </details>
 </dd>
@@ -416,8 +416,8 @@ def run_motor_absolute_motion_by_axis(self, speed, acceleration, absolute_axis):
     &#34;&#34;&#34;
     Returns the current running state of the motor
     Returns:
-        boolean: The running state of the motor. 
-    &#34;&#34;&#34;       
+        boolean: The running state of the motor.
+    &#34;&#34;&#34;
     return self._motor_run_status == RunMotorResult.RunStarting</code></pre>
 </details>
 </dd>
@@ -440,17 +440,17 @@ def run_motor_absolute_motion_by_axis(self, speed, acceleration, absolute_axis):
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def query_motor_status(self): 
+<pre><code class="python">def query_motor_status(self):
     &#34;&#34;&#34;
     Runs the emergency motor stop
-    
+
     Returns:
         SuccessStatus: The success result of the command.
 
     Raises:
-        can.CanError: If there is an error in sending the CAN message.    
-    &#34;&#34;&#34;  
-    return self.specialized_state(MksCommands.QUERY_MOTOR_STATUS_COMMAND, 
+        can.CanError: If there is an error in sending the CAN message.
+    &#34;&#34;&#34;
+    return self.specialized_state(MksCommands.QUERY_MOTOR_STATUS_COMMAND,
         MotorStatus, motor_status_error)                   </code></pre>
 </details>
 </dd>
@@ -484,48 +484,48 @@ addition mode. It can be read using read_encoder_value_addition method.</p>
 </dl>
 <p>Note: In this mode, the axis error is about +-15. It is suggested running with 64 subdivisions.
 <br>
-Note: If the motor is rotating more than 1000 RPM, it is not a good idea to stop the motor inmediately.</p></div>
+Note: If the motor is rotating more than 1000 RPM, it is not a good idea to stop the motor immediately.</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">def run_motor_absolute_motion_by_axis(self, speed, acceleration, absolute_axis):
     &#34;&#34;&#34;
-    The motor runs to the specified axis with the set acceleration and speed. The axis is the encoder value in 
+    The motor runs to the specified axis with the set acceleration and speed. The axis is the encoder value in
     addition mode. It can be read using read_encoder_value_addition method.
 
     Args:
         speed (int): The speed in the range of 0 to 3000 RPMs.
         acceleration (int): The acceleration in the range of 0 to 255.
         absolute_axis (int): The relative axis, the value range is -8388607 to +8388607.
-        
+
     Returns:
-        int: If successful, returns the status of the motor, at the end of the command execution. 
-        None: If there&#39;s an error in sending the message, a self.timeout occurs, or the response is 
+        int: If successful, returns the status of the motor, at the end of the command execution.
+        None: If there&#39;s an error in sending the message, a self.timeout occurs, or the response is
     invalid.
 
     Raises:
         can.CanError: If there is an error in sending the CAN message.
 
-    Note: In this mode, the axis error is about +-15. It is suggested running with 64 subdivisions.    
-    Note: If the motor is rotating more than 1000 RPM, it is not a good idea to stop the motor inmediately.
+    Note: In this mode, the axis error is about +-15. It is suggested running with 64 subdivisions.
+    Note: If the motor is rotating more than 1000 RPM, it is not a good idea to stop the motor immediately.
     &#34;&#34;&#34;
     if self.is_motor_running():
-        raise motor_already_running_error(&#34;&#34;)    
+        raise motor_already_running_error(&#34;&#34;)
     self._validate_speed(speed)
     self._validate_acceleration(acceleration)
-  
-    # TODO: Should we add a check to avoid stopping the motor inmediately when running at more than 1000 RPMs?
+
+    # TODO: Should we add a check to avoid stopping the motor immediately when running at more than 1000 RPMs?
     cmd = [
         ((speed &gt;&gt; 8) &amp; 0b1111),
         speed &amp; 0xFF,
-        acceleration,        
+        acceleration,
         (absolute_axis &gt;&gt; 16) &amp; 0xFF,
         (absolute_axis &gt;&gt; 8) &amp; 0xFF,
         (absolute_axis &gt;&gt; 0) &amp; 0xFF,
     ]
-    tmp = self.set_generic(MksCommands.RUN_MOTOR_ABSOLUTE_MOTION_BY_AXIS_COMMAND, self.GENERIC_RESPONSE_LENGTH, cmd)  
-    status_int = int.from_bytes(tmp[1:2], byteorder=&#39;big&#39;)      
+    tmp = self.set_generic(MksCommands.RUN_MOTOR_ABSOLUTE_MOTION_BY_AXIS_COMMAND, self.GENERIC_RESPONSE_LENGTH, cmd)
+    status_int = int.from_bytes(tmp[1:2], byteorder=&#39;big&#39;)
     try:
         return RunMotorResult(status_int)
     except ValueError:
@@ -559,7 +559,7 @@ Note: If the motor is rotating more than 1000 RPM, it is not a good idea to stop
 <dt><code>can.CanError</code></dt>
 <dd>If there is an error in sending the CAN message.</dd>
 </dl>
-<p>Note: If the motor is rotating more than 1000 RPM, it is not a good idea to stop the motor inmediately.</p></div>
+<p>Note: If the motor is rotating more than 1000 RPM, it is not a good idea to stop the motor immediately.</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
@@ -574,20 +574,20 @@ Note: If the motor is rotating more than 1000 RPM, it is not a good idea to stop
         absolute_pulses (int): The absolute pulses, the value range is -8388607 to +8388607.
 
     Returns:
-        int: If successful, returns the status of the motor, at the end of the command execution. 
-        None: If there&#39;s an error in sending the message, a self.timeout occurs, or the response is 
+        int: If successful, returns the status of the motor, at the end of the command execution.
+        None: If there&#39;s an error in sending the message, a self.timeout occurs, or the response is
     invalid.
 
     Raises:
         can.CanError: If there is an error in sending the CAN message.
-    
-    Note: If the motor is rotating more than 1000 RPM, it is not a good idea to stop the motor inmediately.
-    &#34;&#34;&#34;        
+
+    Note: If the motor is rotating more than 1000 RPM, it is not a good idea to stop the motor immediately.
+    &#34;&#34;&#34;
     if self.is_motor_running:
-        raise motor_already_running_error(&#34;&#34;)    
+        raise motor_already_running_error(&#34;&#34;)
     self._validate_speed(speed)
     self._validate_pulses(absolute_pulses)
-  
+
     cmd = [
         (speed &gt;&gt; 8),
         speed &amp; 0xFF,
@@ -596,13 +596,13 @@ Note: If the motor is rotating more than 1000 RPM, it is not a good idea to stop
         (absolute_pulses &gt;&gt; 8) &amp; 0xFF,
         (absolute_pulses &gt;&gt; 0) &amp; 0xFF,
     ]
-    tmp = self.set_generic(MksCommands.RUN_MOTOR_ABSOLUTE_MOTION_BY_PULSES_COMMAND, self.GENERIC_RESPONSE_LENGTH, cmd)  
-    status_int = int.from_bytes(tmp[1:2], byteorder=&#39;big&#39;)  
+    tmp = self.set_generic(MksCommands.RUN_MOTOR_ABSOLUTE_MOTION_BY_PULSES_COMMAND, self.GENERIC_RESPONSE_LENGTH, cmd)
+    status_int = int.from_bytes(tmp[1:2], byteorder=&#39;big&#39;)
     rslt = {}
     try:
         rslt[&#39;status&#39;] = RunMotorResult(status_int)
     except ValueError:
-        raise motor_status_error(f&#34;No enum member with value {status_int}&#34;)                     
+        raise motor_status_error(f&#34;No enum member with value {status_int}&#34;)
     return rslt      </code></pre>
 </details>
 </dd>
@@ -634,7 +634,7 @@ acceleration (int): The acceleration in the range of 0 to 255.</p>
     &#34;&#34;&#34;
     Sets the speed mode, where the motor can be run with a fixed acceleration and speed.
 
-    Args:        
+    Args:
         direction (Direction): The direction of the motor, CCW or CW.
         speed (int): The speed in the range of 0 to 3000 RPMs.
         acceleration (int): The acceleration in the range of 0 to 255.
@@ -643,8 +643,8 @@ acceleration (int): The acceleration in the range of 0 to 255.</p>
         SuccessStatus: The success result of the command.
 
     Raises:
-        can.CanError: If there is an error in sending the CAN message.    
-    &#34;&#34;&#34;             
+        can.CanError: If there is an error in sending the CAN message.
+    &#34;&#34;&#34;
     self._validate_direction(direction)
     self._validate_speed(speed)
     self._validate_acceleration(acceleration)
@@ -689,14 +689,14 @@ addition mode. It can be read using read_encoder_value_addition method.</p>
 </dl>
 <p>Note: In this mode, the axis error is about +-15. It is suggested running with 64 subdivisions.
 <br>
-Note: If the motor is rotating more than 1000 RPM, it is not a good idea to stop the motor inmediately.</p></div>
+Note: If the motor is rotating more than 1000 RPM, it is not a good idea to stop the motor immediately.</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">def run_motor_relative_motion_by_axis(self, speed, acceleration, relative_axis):
     &#34;&#34;&#34;
-    The motor runs relative to the axis with the set acceleration and speed. The axis is the encoder value in 
+    The motor runs relative to the axis with the set acceleration and speed. The axis is the encoder value in
     addition mode. It can be read using read_encoder_value_addition method.
 
     Args:
@@ -705,37 +705,37 @@ Note: If the motor is rotating more than 1000 RPM, it is not a good idea to stop
         relative_axis (int): The relative axis, the value range is -8388607 to +8388607.
 
     Returns:
-        int: If successful, returns the status of the motor, at the end of the command execution. 
-        None: If there&#39;s an error in sending the message, a self.timeout occurs, or the response is 
+        int: If successful, returns the status of the motor, at the end of the command execution.
+        None: If there&#39;s an error in sending the message, a self.timeout occurs, or the response is
     invalid.
 
     Raises:
         can.CanError: If there is an error in sending the CAN message.
 
-    Note: In this mode, the axis error is about +-15. It is suggested running with 64 subdivisions.    
-    Note: If the motor is rotating more than 1000 RPM, it is not a good idea to stop the motor inmediately.
-    &#34;&#34;&#34;    
+    Note: In this mode, the axis error is about +-15. It is suggested running with 64 subdivisions.
+    Note: If the motor is rotating more than 1000 RPM, it is not a good idea to stop the motor immediately.
+    &#34;&#34;&#34;
     if self.is_motor_running:
-        raise motor_already_running_error(&#34;&#34;)    
+        raise motor_already_running_error(&#34;&#34;)
     self._validate_speed(speed)
     self._validate_acceleration(acceleration)
 
-    # TODO: Should we add a check to avoid stopping the motor inmediately when running at more than 1000 RPMs?
+    # TODO: Should we add a check to avoid stopping the motor immediately when running at more than 1000 RPMs?
     cmd = [
         ((speed &gt;&gt; 8) &amp; 0b1111),
         speed &amp; 0xFF,
-        acceleration,        
+        acceleration,
         (relative_axis &gt;&gt; 16) &amp; 0xFF,
         (relative_axis &gt;&gt; 8) &amp; 0xFF,
         (relative_axis &gt;&gt; 0) &amp; 0xFF,
     ]
-    tmp = self.set_generic(MksCommands.RUN_MOTOR_RELATIVE_MOTION_BY_AXIS_COMMAND, self.GENERIC_RESPONSE_LENGTH, cmd)  
-    status_int = int.from_bytes(tmp[1:2], byteorder=&#39;big&#39;)  
-    rslt = {}    
+    tmp = self.set_generic(MksCommands.RUN_MOTOR_RELATIVE_MOTION_BY_AXIS_COMMAND, self.GENERIC_RESPONSE_LENGTH, cmd)
+    status_int = int.from_bytes(tmp[1:2], byteorder=&#39;big&#39;)
+    rslt = {}
     try:
         rslt[&#39;status&#39;] = RunMotorResult(status_int)
     except ValueError:
-        raise motor_status_error(f&#34;No enum member with value {status_int}&#34;)                                       
+        raise motor_status_error(f&#34;No enum member with value {status_int}&#34;)
     return rslt    </code></pre>
 </details>
 </dd>
@@ -768,7 +768,7 @@ Note: If the motor is rotating more than 1000 RPM, it is not a good idea to stop
 <dt><code>can.CanError</code></dt>
 <dd>If there is an error in sending the CAN message.</dd>
 </dl>
-<p>Note: If the motor is rotating more than 1000 RPM, it is not a good idea to stop the motor inmediately.</p></div>
+<p>Note: If the motor is rotating more than 1000 RPM, it is not a good idea to stop the motor immediately.</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
@@ -784,21 +784,21 @@ Note: If the motor is rotating more than 1000 RPM, it is not a good idea to stop
         pulses (int): The motor run steps, the value range is 0 to 0xFFFFFF.
 
     Returns:
-        int: If successful, returns the status of the motor, at the end of the command execution. 
-        None: If there&#39;s an error in sending the message, a self.timeout occurs, or the response is 
+        int: If successful, returns the status of the motor, at the end of the command execution.
+        None: If there&#39;s an error in sending the message, a self.timeout occurs, or the response is
     invalid.
 
     Raises:
         can.CanError: If there is an error in sending the CAN message.
-    
-    Note: If the motor is rotating more than 1000 RPM, it is not a good idea to stop the motor inmediately.
-    &#34;&#34;&#34;        
+
+    Note: If the motor is rotating more than 1000 RPM, it is not a good idea to stop the motor immediately.
+    &#34;&#34;&#34;
     if self.is_motor_running:
-        raise motor_already_running_error(&#34;&#34;)    
+        raise motor_already_running_error(&#34;&#34;)
     self._validate_direction(direction)
     self._validate_speed(speed)
     self._validate_pulses(pulses)
-  
+
     direction_value = 0x80 if direction == Direction.CW else 0
 
     cmd = [
@@ -809,13 +809,13 @@ Note: If the motor is rotating more than 1000 RPM, it is not a good idea to stop
         (pulses &gt;&gt; 8) &amp; 0xFF,
         (pulses &gt;&gt; 0) &amp; 0xFF,
     ]
-    tmp = self.set_generic(MksCommands.RUN_MOTOR_RELATIVE_MOTION_BY_PULSES_COMMAND, self.GENERIC_RESPONSE_LENGTH, cmd)  
-    status_int = int.from_bytes(tmp[1:2], byteorder=&#39;big&#39;)  
+    tmp = self.set_generic(MksCommands.RUN_MOTOR_RELATIVE_MOTION_BY_PULSES_COMMAND, self.GENERIC_RESPONSE_LENGTH, cmd)
+    status_int = int.from_bytes(tmp[1:2], byteorder=&#39;big&#39;)
     rslt = {}
     try:
         rslt[&#39;status&#39;] = RunMotorResult(status_int)
     except ValueError:
-        raise motor_status_error(f&#34;No enum member with value {status_int}&#34;)                     
+        raise motor_status_error(f&#34;No enum member with value {status_int}&#34;)
     return rslt   </code></pre>
 </details>
 </dd>
@@ -845,15 +845,15 @@ state (SaveCleanState): The save/clean paramete state</p>
     &#34;&#34;&#34;
     Sets the save/clean parameter state in speed mode
 
-    Args:        
+    Args:
         state (SaveCleanState): The save/clean paramete state
 
     Returns:
         SuccessStatus: The success result of the command.
 
     Raises:
-        can.CanError: If there is an error in sending the CAN message.    
-    &#34;&#34;&#34;         
+        can.CanError: If there is an error in sending the CAN message.
+    &#34;&#34;&#34;
     return self.set_generic_status(MksCommands.SAVE_CLEAN_IN_SPEED_MODE_COMMAND)   </code></pre>
 </details>
 </dd>
@@ -880,19 +880,19 @@ timeout (double): Maximum number of seconds to wait for the motor to stop.
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def wait_for_motor_idle(self, timeout):    
+<pre><code class="python">def wait_for_motor_idle(self, timeout):
     &#34;&#34;&#34;
     Waits until the motor stops running or the timeout time is meet.
 
-    Args:        
-        timeout (double): Maximum number of seconds to wait for the motor to stop.        
+    Args:
+        timeout (double): Maximum number of seconds to wait for the motor to stop.
 
     Returns:
         boolean: The running state of the motor at the end of this method.
 
     Raises:
-        can.CanError: If there is an error in sending the CAN message.    
-    &#34;&#34;&#34;     
+        can.CanError: If there is an error in sending the CAN message.
+    &#34;&#34;&#34;
     start_time = time.perf_counter()
     while (time.perf_counter() - start_time &lt; timeout) and self.is_motor_running():
         time.sleep(0.1)  # Small sleep to prevent busy waiting

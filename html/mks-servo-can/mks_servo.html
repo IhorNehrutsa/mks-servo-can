@@ -85,7 +85,7 @@ class MksServo:
         run_motor_in_speed_mode,
         save_clean_in_speed_mode,
         is_motor_running,
-        wait_for_motor_idle,        
+        wait_for_motor_idle,
         run_motor_relative_motion_by_pulses,
         run_motor_absolute_motion_by_pulses,
         run_motor_relative_motion_by_axis,
@@ -139,7 +139,7 @@ class MksServo:
 
     &#34;&#34;&#34;Controls MKS Servo via CAN messages.
 
-    This class provides functionality to send commands to and receive responses from 
+    This class provides functionality to send commands to and receive responses from
     an MKS Servo using CAN bus communication.
 
     Attributes:
@@ -162,7 +162,7 @@ class MksServo:
         Args:
             bus (can.interface.Bus): The CAN bus instance to be used.
             can_id (int): The CAN ID for this servo.
-        &#34;&#34;&#34;     
+        &#34;&#34;&#34;
 
         def monitor_incomming_messages(message):
             try:
@@ -170,28 +170,28 @@ class MksServo:
                     self.check_msg_crc(message)
 
                     if (message.data[0] == self.MOTOR_CALIBRATION_COMMAND and len(message.data) == self.GENERIC_RESPONSE_LENGTH):
-                        status_int = int.from_bytes(message.data[1:2], byteorder=&#39;big&#39;)  
+                        status_int = int.from_bytes(message.data[1:2], byteorder=&#39;big&#39;)
                         try:
-                            self._calibration_status = self.CalibrationResult(status_int)                            
+                            self._calibration_status = self.CalibrationResult(status_int)
                         except ValueError:
-                            logging.warning(f&#34;No enum member with value {status_int}&#34;)                                                       
+                            logging.warning(f&#34;No enum member with value {status_int}&#34;)
                     elif (message.data[0] == self.RUN_MOTOR_ABSOLUTE_MOTION_BY_AXIS_COMMAND and len(message.data) == self.GENERIC_RESPONSE_LENGTH):
-                        status_int = int.from_bytes(message.data[1:2], byteorder=&#39;big&#39;)  
+                        status_int = int.from_bytes(message.data[1:2], byteorder=&#39;big&#39;)
                         try:
-                            self._motor_run_status = self.RunMotorResult(status_int)                            
+                            self._motor_run_status = self.RunMotorResult(status_int)
                         except ValueError:
-                            logging.warning(f&#34;No enum member with value {status_int}&#34;)                                                       
+                            logging.warning(f&#34;No enum member with value {status_int}&#34;)
                     elif message.data[0] == self.QUERY_MOTOR_STATUS_COMMAND:
                         a = 1
                     elif message.data[0] == self.QUERY_READ_ENCODED_VALUE_ADDITION_COMMAND:
-                        a = 1                       
-                    else:                    
+                        a = 1
+                    else:
                         print(&#34;New message&#34;)
-                        print(message, flush=True)                                       
+                        print(message, flush=True)
             except InvalidCRCError:
-                logging.error(f&#34;CRC check failed for the message&#34;)                    
+                logging.error(f&#34;CRC check failed for the message&#34;)
             return True
-                   
+
         self.can_id = id
         self.bus = bus
         self.notifier = notifier
@@ -215,7 +215,7 @@ class MksServo:
         else:
             return value
 
-    
+
     def create_can_msg(self, msg):
         &#34;&#34;&#34;Creates a CAN message with a CRC byte appended at the end.
 
@@ -229,8 +229,8 @@ class MksServo:
         # Calculate CRC and append to message
         crc = (self.can_id + sum(msg)) &amp; 0xFF
         write_data = bytearray(msg) + bytes([crc])
-        
-        can_message = can.Message(arbitration_id=self.can_id, data=write_data, is_extended_id=False)            
+
+        can_message = can.Message(arbitration_id=self.can_id, data=write_data, is_extended_id=False)
         logging.debug(f&#34;CAN Message Created: {can_message}&#34;)
 
         return can_message
@@ -250,10 +250,10 @@ class MksServo:
         # Calculate expected CRC and compare with the last byte of the message data
         crc = (msg.arbitration_id + sum(msg.data[:-1])) &amp; 0xFF
         if msg.data[-1] != crc:
-            raise InvalidCRCError(&#34;CRC check failed for the message.&#34;)    
-            
+            raise InvalidCRCError(&#34;CRC check failed for the message.&#34;)
+
         return True
-    
+
     def set_generic(self, op_code, response_length, data = []):
         &#34;&#34;&#34;Sends a generic command via CAN bus and waits for a response.
 
@@ -263,7 +263,7 @@ class MksServo:
 
         Returns:
             dict: A dictionary with &#39;status&#39; key if successful, None otherwise.
-        &#34;&#34;&#34;      
+        &#34;&#34;&#34;
 
         # Check if data is an integer and convert it to a list if it is
         if isinstance(data, int):
@@ -271,7 +271,7 @@ class MksServo:
         elif isinstance(data, bool):
             # Assuming _bool_to_int is a method that converts a boolean to an integer
             data = self._bool_to_int(data)
-                    
+
         msg = self.create_can_msg([op_code] + data)
         # Flag to indicate whether the response has been received
         status = None
@@ -283,16 +283,16 @@ class MksServo:
                     self.check_msg_crc(message)
                     if message.arbitration_id == self.can_id:
                         if not (message.data[0] == op_code and len(message.data) == response_length):
-                            logging.error(f&#34;Unexpected response length or opcode.&#34;)                        
-                        status = message.data                                                                
+                            logging.error(f&#34;Unexpected response length or opcode.&#34;)
+                        status = message.data
                 except InvalidCRCError:
-                    logging.error(f&#34;CRC check failed for the message: {e}&#34;)            
+                    logging.error(f&#34;CRC check failed for the message: {e}&#34;)
 
-        try:        
+        try:
             self.notifier.add_listener(receive_message)
             self.bus.send(msg)
         except can.CanError as e:
-            raise CanMessageError(f&#34;Error sending message: {e}&#34;)            
+            raise CanMessageError(f&#34;Error sending message: {e}&#34;)
 
         # Wait for response (with a timeout)
         start_time = time.perf_counter()
@@ -301,7 +301,7 @@ class MksServo:
         self.notifier.remove_listener(receive_message)
 
         return status
-                      
+
     def set_generic_status(self, op_code, data = []):
         &#34;&#34;&#34;Sends a generic status command and processes the response.
 
@@ -311,25 +311,25 @@ class MksServo:
 
         Returns:
             dict: Modified result dictionary with &#39;status&#39; key, None on error.
-        &#34;&#34;&#34;        
+        &#34;&#34;&#34;
         tmp = self.set_generic(op_code, MksServo.GENERIC_RESPONSE_LENGTH, data)
         if not tmp == None:
-            status_int = int.from_bytes(tmp[1:2], byteorder=&#39;big&#39;)  
+            status_int = int.from_bytes(tmp[1:2], byteorder=&#39;big&#39;)
 
-            try:            
+            try:
                 return SuccessStatus(status_int)
             except ValueError:
                 raise InvalidResponseError(f&#34;No enum member with value {status_int}&#34;)
-                
+
         return None
-    
+
     def specialized_state(self, op_code, status_enum, status_enum_exception):
-        tmp = self.set_generic(op_code, self.GENERIC_RESPONSE_LENGTH, [op_code])  
-        status_int = int.from_bytes(tmp[1:2], byteorder=&#39;big&#39;)  
+        tmp = self.set_generic(op_code, self.GENERIC_RESPONSE_LENGTH, [op_code])
+        status_int = int.from_bytes(tmp[1:2], byteorder=&#39;big&#39;)
         try:
             return status_enum(status_int)
         except ValueError:
-            raise status_enum_exception(f&#34;No enum member with value {status_int}&#34;)                     
+            raise status_enum_exception(f&#34;No enum member with value {status_int}&#34;)
         </code></pre>
 </details>
 </section>
@@ -452,7 +452,7 @@ class MksServo:
         run_motor_in_speed_mode,
         save_clean_in_speed_mode,
         is_motor_running,
-        wait_for_motor_idle,        
+        wait_for_motor_idle,
         run_motor_relative_motion_by_pulses,
         run_motor_absolute_motion_by_pulses,
         run_motor_relative_motion_by_axis,
@@ -506,7 +506,7 @@ class MksServo:
 
     &#34;&#34;&#34;Controls MKS Servo via CAN messages.
 
-    This class provides functionality to send commands to and receive responses from 
+    This class provides functionality to send commands to and receive responses from
     an MKS Servo using CAN bus communication.
 
     Attributes:
@@ -529,7 +529,7 @@ class MksServo:
         Args:
             bus (can.interface.Bus): The CAN bus instance to be used.
             can_id (int): The CAN ID for this servo.
-        &#34;&#34;&#34;     
+        &#34;&#34;&#34;
 
         def monitor_incomming_messages(message):
             try:
@@ -537,28 +537,28 @@ class MksServo:
                     self.check_msg_crc(message)
 
                     if (message.data[0] == self.MOTOR_CALIBRATION_COMMAND and len(message.data) == self.GENERIC_RESPONSE_LENGTH):
-                        status_int = int.from_bytes(message.data[1:2], byteorder=&#39;big&#39;)  
+                        status_int = int.from_bytes(message.data[1:2], byteorder=&#39;big&#39;)
                         try:
-                            self._calibration_status = self.CalibrationResult(status_int)                            
+                            self._calibration_status = self.CalibrationResult(status_int)
                         except ValueError:
-                            logging.warning(f&#34;No enum member with value {status_int}&#34;)                                                       
+                            logging.warning(f&#34;No enum member with value {status_int}&#34;)
                     elif (message.data[0] == self.RUN_MOTOR_ABSOLUTE_MOTION_BY_AXIS_COMMAND and len(message.data) == self.GENERIC_RESPONSE_LENGTH):
-                        status_int = int.from_bytes(message.data[1:2], byteorder=&#39;big&#39;)  
+                        status_int = int.from_bytes(message.data[1:2], byteorder=&#39;big&#39;)
                         try:
-                            self._motor_run_status = self.RunMotorResult(status_int)                            
+                            self._motor_run_status = self.RunMotorResult(status_int)
                         except ValueError:
-                            logging.warning(f&#34;No enum member with value {status_int}&#34;)                                                       
+                            logging.warning(f&#34;No enum member with value {status_int}&#34;)
                     elif message.data[0] == self.QUERY_MOTOR_STATUS_COMMAND:
                         a = 1
                     elif message.data[0] == self.QUERY_READ_ENCODED_VALUE_ADDITION_COMMAND:
-                        a = 1                       
-                    else:                    
+                        a = 1
+                    else:
                         print(&#34;New message&#34;)
-                        print(message, flush=True)                                       
+                        print(message, flush=True)
             except InvalidCRCError:
-                logging.error(f&#34;CRC check failed for the message&#34;)                    
+                logging.error(f&#34;CRC check failed for the message&#34;)
             return True
-                   
+
         self.can_id = id
         self.bus = bus
         self.notifier = notifier
@@ -582,7 +582,7 @@ class MksServo:
         else:
             return value
 
-    
+
     def create_can_msg(self, msg):
         &#34;&#34;&#34;Creates a CAN message with a CRC byte appended at the end.
 
@@ -596,8 +596,8 @@ class MksServo:
         # Calculate CRC and append to message
         crc = (self.can_id + sum(msg)) &amp; 0xFF
         write_data = bytearray(msg) + bytes([crc])
-        
-        can_message = can.Message(arbitration_id=self.can_id, data=write_data, is_extended_id=False)            
+
+        can_message = can.Message(arbitration_id=self.can_id, data=write_data, is_extended_id=False)
         logging.debug(f&#34;CAN Message Created: {can_message}&#34;)
 
         return can_message
@@ -617,10 +617,10 @@ class MksServo:
         # Calculate expected CRC and compare with the last byte of the message data
         crc = (msg.arbitration_id + sum(msg.data[:-1])) &amp; 0xFF
         if msg.data[-1] != crc:
-            raise InvalidCRCError(&#34;CRC check failed for the message.&#34;)    
-            
+            raise InvalidCRCError(&#34;CRC check failed for the message.&#34;)
+
         return True
-    
+
     def set_generic(self, op_code, response_length, data = []):
         &#34;&#34;&#34;Sends a generic command via CAN bus and waits for a response.
 
@@ -630,7 +630,7 @@ class MksServo:
 
         Returns:
             dict: A dictionary with &#39;status&#39; key if successful, None otherwise.
-        &#34;&#34;&#34;      
+        &#34;&#34;&#34;
 
         # Check if data is an integer and convert it to a list if it is
         if isinstance(data, int):
@@ -638,7 +638,7 @@ class MksServo:
         elif isinstance(data, bool):
             # Assuming _bool_to_int is a method that converts a boolean to an integer
             data = self._bool_to_int(data)
-                    
+
         msg = self.create_can_msg([op_code] + data)
         # Flag to indicate whether the response has been received
         status = None
@@ -650,16 +650,16 @@ class MksServo:
                     self.check_msg_crc(message)
                     if message.arbitration_id == self.can_id:
                         if not (message.data[0] == op_code and len(message.data) == response_length):
-                            logging.error(f&#34;Unexpected response length or opcode.&#34;)                        
-                        status = message.data                                                                
+                            logging.error(f&#34;Unexpected response length or opcode.&#34;)
+                        status = message.data
                 except InvalidCRCError:
-                    logging.error(f&#34;CRC check failed for the message: {e}&#34;)            
+                    logging.error(f&#34;CRC check failed for the message: {e}&#34;)
 
-        try:        
+        try:
             self.notifier.add_listener(receive_message)
             self.bus.send(msg)
         except can.CanError as e:
-            raise CanMessageError(f&#34;Error sending message: {e}&#34;)            
+            raise CanMessageError(f&#34;Error sending message: {e}&#34;)
 
         # Wait for response (with a timeout)
         start_time = time.perf_counter()
@@ -668,7 +668,7 @@ class MksServo:
         self.notifier.remove_listener(receive_message)
 
         return status
-                      
+
     def set_generic_status(self, op_code, data = []):
         &#34;&#34;&#34;Sends a generic status command and processes the response.
 
@@ -678,21 +678,21 @@ class MksServo:
 
         Returns:
             dict: Modified result dictionary with &#39;status&#39; key, None on error.
-        &#34;&#34;&#34;        
+        &#34;&#34;&#34;
         tmp = self.set_generic(op_code, MksServo.GENERIC_RESPONSE_LENGTH, data)
         if not tmp == None:
-            status_int = int.from_bytes(tmp[1:2], byteorder=&#39;big&#39;)  
+            status_int = int.from_bytes(tmp[1:2], byteorder=&#39;big&#39;)
 
-            try:            
+            try:
                 return SuccessStatus(status_int)
             except ValueError:
                 raise InvalidResponseError(f&#34;No enum member with value {status_int}&#34;)
-                
+
         return None
-    
+
     def specialized_state(self, op_code, status_enum, status_enum_exception):
-        tmp = self.set_generic(op_code, self.GENERIC_RESPONSE_LENGTH, [op_code])  
-        status_int = int.from_bytes(tmp[1:2], byteorder=&#39;big&#39;)  
+        tmp = self.set_generic(op_code, self.GENERIC_RESPONSE_LENGTH, [op_code])
+        status_int = int.from_bytes(tmp[1:2], byteorder=&#39;big&#39;)
         try:
             return status_enum(status_int)
         except ValueError:
@@ -1382,9 +1382,9 @@ attributes &ndash; see the documentation for details.</p></div>
         CalibrationResult: The success result of the command. It should be &#34;CalibratedSuccess&#34; or &#34;CalibratingFail&#34;.
 
     Raises:
-        can.CanError: If there is an error in sending the CAN message.    
-    &#34;&#34;&#34;      
-    nb_calibrate_encoder(self) 
+        can.CanError: If there is an error in sending the CAN message.
+    &#34;&#34;&#34;
+    nb_calibrate_encoder(self)
     wait_for_calibration(self)
     return self._calibration_status</code></pre>
 </details>
@@ -1423,8 +1423,8 @@ attributes &ndash; see the documentation for details.</p></div>
     # Calculate expected CRC and compare with the last byte of the message data
     crc = (msg.arbitration_id + sum(msg.data[:-1])) &amp; 0xFF
     if msg.data[-1] != crc:
-        raise InvalidCRCError(&#34;CRC check failed for the message.&#34;)    
-        
+        raise InvalidCRCError(&#34;CRC check failed for the message.&#34;)
+
     return True</code></pre>
 </details>
 </dd>
@@ -1460,8 +1460,8 @@ attributes &ndash; see the documentation for details.</p></div>
     # Calculate CRC and append to message
     crc = (self.can_id + sum(msg)) &amp; 0xFF
     write_data = bytearray(msg) + bytes([crc])
-    
-    can_message = can.Message(arbitration_id=self.can_id, data=write_data, is_extended_id=False)            
+
+    can_message = can.Message(arbitration_id=self.can_id, data=write_data, is_extended_id=False)
     logging.debug(f&#34;CAN Message Created: {can_message}&#34;)
 
     return can_message</code></pre>
@@ -1494,8 +1494,8 @@ attributes &ndash; see the documentation for details.</p></div>
         SuccessStatus: The success result of the command.
 
     Raises:
-        can.CanError: If there is an error in sending the CAN message.    
-    &#34;&#34;&#34;      
+        can.CanError: If there is an error in sending the CAN message.
+    &#34;&#34;&#34;
     return self.set_generic_status(MksCommands.EMERGENCY_STOP_COMMAND)   </code></pre>
 </details>
 </dd>
@@ -1541,17 +1541,17 @@ attributes &ndash; see the documentation for details.</p></div>
         SuccessStatus: The success result of the command.
 
     Raises:
-        can.CanError: If there is an error in sending the CAN message.        
+        can.CanError: If there is an error in sending the CAN message.
 
     Note: Same as the &#34;CanID&#34; option on screen.
-    &#34;&#34;&#34;       
+    &#34;&#34;&#34;
     tmp = self.set_generic(MksCommands.GO_HOME_COMMAND, self.GENERIC_RESPONSE_LENGTH)
-    status_int = int.from_bytes(tmp[1:2], byteorder=&#39;big&#39;)  
+    status_int = int.from_bytes(tmp[1:2], byteorder=&#39;big&#39;)
     rslt = {}
     try:
         rslt[&#39;status&#39;] = GoHomeResult(status_int)
     except ValueError:
-        raise gohome_status_error(f&#34;No enum member with value {status_int}&#34;)                     
+        raise gohome_status_error(f&#34;No enum member with value {status_int}&#34;)
     return rslt   </code></pre>
 </details>
 </dd>
@@ -1573,8 +1573,8 @@ attributes &ndash; see the documentation for details.</p></div>
     &#34;&#34;&#34;
     Returns the current running state of the motor
     Returns:
-        boolean: The running state of the motor. 
-    &#34;&#34;&#34;       
+        boolean: The running state of the motor.
+    &#34;&#34;&#34;
     return self._motor_run_status == RunMotorResult.RunStarting</code></pre>
 </details>
 </dd>
@@ -1605,10 +1605,10 @@ attributes &ndash; see the documentation for details.</p></div>
         CalibrationResult: The success result of the command. It should be &#34;Calibrating&#34;.
 
     Raises:
-        can.CanError: If there is an error in sending the CAN message.    
-    &#34;&#34;&#34;       
+        can.CanError: If there is an error in sending the CAN message.
+    &#34;&#34;&#34;
     tmp = self.set_generic(MksCommands.MOTOR_CALIBRATION_COMMAND, self.GENERIC_RESPONSE_LENGTH, 0x00)
-    status_int = int.from_bytes(tmp[1:2], byteorder=&#39;big&#39;)      
+    status_int = int.from_bytes(tmp[1:2], byteorder=&#39;big&#39;)
     try:
         rslt = CalibrationResult(status_int)
         self._calibration_status = rslt
@@ -1636,17 +1636,17 @@ attributes &ndash; see the documentation for details.</p></div>
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def query_motor_status(self): 
+<pre><code class="python">def query_motor_status(self):
     &#34;&#34;&#34;
     Runs the emergency motor stop
-    
+
     Returns:
         SuccessStatus: The success result of the command.
 
     Raises:
-        can.CanError: If there is an error in sending the CAN message.    
-    &#34;&#34;&#34;  
-    return self.specialized_state(MksCommands.QUERY_MOTOR_STATUS_COMMAND, 
+        can.CanError: If there is an error in sending the CAN message.
+    &#34;&#34;&#34;
+    return self.specialized_state(MksCommands.QUERY_MOTOR_STATUS_COMMAND,
         MotorStatus, motor_status_error)                   </code></pre>
 </details>
 </dd>
@@ -1678,13 +1678,13 @@ attributes &ndash; see the documentation for details.</p></div>
 
     Returns:
         int: If successful, returns the enable pin status.
-        None: if there&#39;s an error in sending the message, a self.timeout occurs, or the response is 
+        None: if there&#39;s an error in sending the message, a self.timeout occurs, or the response is
         invalid.
 
     Raises:
         can.CanError: If there is an error in sending the CAN message.
-    &#34;&#34;&#34;     
-    return self.specialized_state(self.READ_EN_PINS_STATUS, 
+    &#34;&#34;&#34;
+    return self.specialized_state(self.READ_EN_PINS_STATUS,
         EnableStatus, enable_status_error)                   </code></pre>
 </details>
 </dd>
@@ -1713,13 +1713,13 @@ if the current value is 0x3FF0, after one turn CW, the carry is -1 and value is 
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def read_encoder_value_addition(self): 
+<pre><code class="python">def read_encoder_value_addition(self):
     &#34;&#34;&#34;
     Reads the encoder value in addition mode
 
     Returns:
         int: If successful, returns the current value of the encoder (range from 0 to +-0x7FFFFFFFFFFF).
-        None: if there&#39;s an error in sending the message, a self.timeout occurs, or the response is 
+        None: if there&#39;s an error in sending the message, a self.timeout occurs, or the response is
         invalid.
 
     Raises:
@@ -1728,14 +1728,14 @@ if the current value is 0x3FF0, after one turn CW, the carry is -1 and value is 
     Examples:
         if the current value is 0x3FF0, after one turn CCW, the carry is 1 and value is 0x7FF0.
         if the current value is 0x3FF0, after one turn CW, the carry is -1 and value is -0x10.
-    &#34;&#34;&#34;       
+    &#34;&#34;&#34;
     op_code = MksCommands.READ_ENCODED_VALUE_ADDITION
     response_length = 8
 
     data = self.set_generic(op_code, response_length, [op_code])
 
     if data:
-        return int.from_bytes(data[1:7], byteorder=&#39;big&#39;, signed=True)                                
+        return int.from_bytes(data[1:7], byteorder=&#39;big&#39;, signed=True)
     return None  </code></pre>
 </details>
 </dd>
@@ -1774,15 +1774,15 @@ if the current carry is 0 and value is 0x3FF0, after one turn CW, the carry is -
     Reads the encoder value
 
     Returns:
-        dict or None: If successful, returns a dictionary with &#39;carry&#39; and &#39;value&#39; from the encoder. 
-    Returns None if there&#39;s an error in sending the message, a self.timeout occurs, or the response is 
+        dict or None: If successful, returns a dictionary with &#39;carry&#39; and &#39;value&#39; from the encoder.
+    Returns None if there&#39;s an error in sending the message, a self.timeout occurs, or the response is
     invalid.
 
     Keyword Returns:
-        &lt;carry&gt; int: The carry value of the encoder. 
-            When value is greather than 0x3FFF, carry += 1. 
+        &lt;carry&gt; int: The carry value of the encoder.
+            When value is greather than 0x3FFF, carry += 1.
             When value is less than 0, carry -= 1
-          
+
         &lt;value&gt; int: The current value of the encoder (range from 0 to 0x3FFF).
 
     Raises:
@@ -1801,7 +1801,7 @@ if the current carry is 0 and value is 0x3FF0, after one turn CW, the carry is -
         carry = int.from_bytes(data[1:5], byteorder=&#39;big&#39;, signed=True)
         value = int.from_bytes(data[5:7], byteorder=&#39;big&#39;, signed=True)
         return {&#39;carry&#39;: carry, &#39;value&#39;: value}
-    
+
     return None          </code></pre>
 </details>
 </dd>
@@ -1833,13 +1833,13 @@ if the current carry is 0 and value is 0x3FF0, after one turn CW, the carry is -
 
     Returns:
         int: If successful, returns the go back to zero status.
-        None: if there&#39;s an error in sending the message, a self.timeout occurs, or the response is 
+        None: if there&#39;s an error in sending the message, a self.timeout occurs, or the response is
         invalid.
 
     Raises:
         can.CanError: If there is an error in sending the CAN message.
-    &#34;&#34;&#34;    
-    return self.specialized_state(self.READ_GO_BACK_TO_ZERO_STATUS_WHEN_POWER_ON, 
+    &#34;&#34;&#34;
+    return self.specialized_state(self.READ_GO_BACK_TO_ZERO_STATUS_WHEN_POWER_ON,
         GoBackToZeroStatus, go_back_to_zero_status_error) </code></pre>
 </details>
 </dd>
@@ -1871,19 +1871,19 @@ if the current carry is 0 and value is 0x3FF0, after one turn CW, the carry is -
 
     Returns:
         int: If successful, returns the port status as Bit[0] is IN_1, Bit[1] is IN_2, Bit[2] is OUT_1, Bit[3] is OUT_2
-        None: if there&#39;s an error in sending the message, a self.timeout occurs, or the response is 
+        None: if there&#39;s an error in sending the message, a self.timeout occurs, or the response is
         invalid.
 
     Raises:
         can.CanError: If there is an error in sending the CAN message.
-    &#34;&#34;&#34;        
+    &#34;&#34;&#34;
     op_code = MksCommands.READ_NUM_PULSES_RECEIVED
     response_length = 3
     data = self.set_generic(op_code, response_length, [op_code])
 
     # TODO: Parse the response and return the data in a dictionary for each of the pins
     if data:
-        return int.from_bytes(data[1:2], byteorder=&#39;big&#39;)                                
+        return int.from_bytes(data[1:2], byteorder=&#39;big&#39;)
     return None  </code></pre>
 </details>
 </dd>
@@ -1922,7 +1922,7 @@ if the current carry is 0 and value is 0x3FF0, after one turn CW, the carry is -
 
     Returns:
         int: If successful, returns the error of the motor shaft angle.
-        None: if there&#39;s an error in sending the message, a self.timeout occurs, or the response is 
+        None: if there&#39;s an error in sending the message, a self.timeout occurs, or the response is
         invalid.
 
     Raises:
@@ -1933,14 +1933,14 @@ if the current carry is 0 and value is 0x3FF0, after one turn CW, the carry is -
 
     Example:
         When the angle error is 1º, the return error is 51200/360 = 142.
-    &#34;&#34;&#34;     
+    &#34;&#34;&#34;
     op_code = MksCommands.READ_MOTOR_SHAFT_ANGLE_ERROR
     response_length = 6
     data = self.set_generic(op_code, response_length, [op_code])
 
     # TODO: Raise an exception here  if there is a problem parsing the response
     if data:
-        return int.from_bytes(data[1:5], byteorder=&#39;big&#39;, signed=True)                                
+        return int.from_bytes(data[1:5], byteorder=&#39;big&#39;, signed=True)
     return None  </code></pre>
 </details>
 </dd>
@@ -1972,13 +1972,13 @@ if the current carry is 0 and value is 0x3FF0, after one turn CW, the carry is -
 
     Returns:
         int: If successful, returns the motor shaft protection state.
-        None: if there&#39;s an error in sending the message, a self.timeout occurs, or the response is 
+        None: if there&#39;s an error in sending the message, a self.timeout occurs, or the response is
         invalid.
 
     Raises:
         can.CanError: If there is an error in sending the CAN message.
-    &#34;&#34;&#34;                 
-    return self.specialized_state(self.READ_MOTOR_SHAFT_PROTECTION_STATE, 
+    &#34;&#34;&#34;
+    return self.specialized_state(self.READ_MOTOR_SHAFT_PROTECTION_STATE,
         MotorShaftProtectionStatus, motor_shaft_protection_status_error)</code></pre>
 </details>
 </dd>
@@ -2013,7 +2013,7 @@ If it runs CW, the speed is negative.</p></div>
 
     Returns:
         int: If successful, returns the current speed of the motor in RPM.
-        None: if there&#39;s an error in sending the message, a self.timeout occurs, or the response is 
+        None: if there&#39;s an error in sending the message, a self.timeout occurs, or the response is
         invalid.
 
     Raises:
@@ -2022,7 +2022,7 @@ If it runs CW, the speed is negative.</p></div>
     Note:
         If it runs CCW, the speed is positive.
         If it runs CW, the speed is negative.
-    &#34;&#34;&#34;          
+    &#34;&#34;&#34;
     op_code = MksCommands.READ_MOTOR_SPEED
     response_length = 4
 
@@ -2030,7 +2030,7 @@ If it runs CW, the speed is negative.</p></div>
 
     # TODO: Raise an exception here  if there is a problem parsing the response
     if data:
-        return int.from_bytes(data[1:3], byteorder=&#39;big&#39;, signed=True)                                
+        return int.from_bytes(data[1:3], byteorder=&#39;big&#39;, signed=True)
     return None  </code></pre>
 </details>
 </dd>
@@ -2056,18 +2056,18 @@ If it runs CW, the speed is negative.</p></div>
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def read_num_pulses_received(self): 
+<pre><code class="python">def read_num_pulses_received(self):
     &#34;&#34;&#34;
     Reads the number of pulses received
 
     Returns:
         int: If successful, returns the number of pulses received.
-        None: if there&#39;s an error in sending the message, a self.timeout occurs, or the response is 
+        None: if there&#39;s an error in sending the message, a self.timeout occurs, or the response is
         invalid.
 
     Raises:
         can.CanError: If there is an error in sending the CAN message.
-    &#34;&#34;&#34;          
+    &#34;&#34;&#34;
     op_code = MksCommands.READ_NUM_PULSES_RECEIVED
     response_length = 6
 
@@ -2075,7 +2075,7 @@ If it runs CW, the speed is negative.</p></div>
 
     # TODO: Raise an exception here  if there is a problem parsing the response
     if data:
-        return int.from_bytes(data[1:5], byteorder=&#39;big&#39;, signed=True)                                
+        return int.from_bytes(data[1:5], byteorder=&#39;big&#39;, signed=True)
     return None  </code></pre>
 </details>
 </dd>
@@ -2107,13 +2107,13 @@ If it runs CW, the speed is negative.</p></div>
 
     Returns:
         int: If successful, returns the release motor shaft locked protection state.
-        None: if there&#39;s an error in sending the message, a self.timeout occurs, or the response is 
+        None: if there&#39;s an error in sending the message, a self.timeout occurs, or the response is
         invalid.
 
     Raises:
         can.CanError: If there is an error in sending the CAN message.
-    &#34;&#34;&#34;        
-    return self.specialized_state(self.RELEASE_MOTOR_SHAFT_LOCKED_PROTECTION_STATE, 
+    &#34;&#34;&#34;
+    return self.specialized_state(self.RELEASE_MOTOR_SHAFT_LOCKED_PROTECTION_STATE,
         SuccessStatus, success_status_error) </code></pre>
 </details>
 </dd>
@@ -2147,17 +2147,17 @@ can_id (int): The can id</p>
     Restores the default parameters. After restored the parameters, motor driver will reboot, and
     needs to calibrate the motor.
 
-    Args:        
+    Args:
         can_id (int): The can id
 
     Returns:
         SuccessStatus: The success result of the command.
 
     Raises:
-        can.CanError: If there is an error in sending the CAN message.        
+        can.CanError: If there is an error in sending the CAN message.
 
     Note: This is the same as pressing the &#34;Next&#34; key, then power on the motor.
-    &#34;&#34;&#34;       
+    &#34;&#34;&#34;
     return self.set_generic_status(MksCommands.RESTORE_DEFAULT_PARAMETERS_COMMAND)   </code></pre>
 </details>
 </dd>
@@ -2191,48 +2191,48 @@ addition mode. It can be read using read_encoder_value_addition method.</p>
 </dl>
 <p>Note: In this mode, the axis error is about +-15. It is suggested running with 64 subdivisions.
 <br>
-Note: If the motor is rotating more than 1000 RPM, it is not a good idea to stop the motor inmediately.</p></div>
+Note: If the motor is rotating more than 1000 RPM, it is not a good idea to stop the motor immediately.</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">def run_motor_absolute_motion_by_axis(self, speed, acceleration, absolute_axis):
     &#34;&#34;&#34;
-    The motor runs to the specified axis with the set acceleration and speed. The axis is the encoder value in 
+    The motor runs to the specified axis with the set acceleration and speed. The axis is the encoder value in
     addition mode. It can be read using read_encoder_value_addition method.
 
     Args:
         speed (int): The speed in the range of 0 to 3000 RPMs.
         acceleration (int): The acceleration in the range of 0 to 255.
         absolute_axis (int): The relative axis, the value range is -8388607 to +8388607.
-        
+
     Returns:
-        int: If successful, returns the status of the motor, at the end of the command execution. 
-        None: If there&#39;s an error in sending the message, a self.timeout occurs, or the response is 
+        int: If successful, returns the status of the motor, at the end of the command execution.
+        None: If there&#39;s an error in sending the message, a self.timeout occurs, or the response is
     invalid.
 
     Raises:
         can.CanError: If there is an error in sending the CAN message.
 
-    Note: In this mode, the axis error is about +-15. It is suggested running with 64 subdivisions.    
-    Note: If the motor is rotating more than 1000 RPM, it is not a good idea to stop the motor inmediately.
+    Note: In this mode, the axis error is about +-15. It is suggested running with 64 subdivisions.
+    Note: If the motor is rotating more than 1000 RPM, it is not a good idea to stop the motor immediately.
     &#34;&#34;&#34;
     if self.is_motor_running():
-        raise motor_already_running_error(&#34;&#34;)    
+        raise motor_already_running_error(&#34;&#34;)
     self._validate_speed(speed)
     self._validate_acceleration(acceleration)
-  
-    # TODO: Should we add a check to avoid stopping the motor inmediately when running at more than 1000 RPMs?
+
+    # TODO: Should we add a check to avoid stopping the motor immediately when running at more than 1000 RPMs?
     cmd = [
         ((speed &gt;&gt; 8) &amp; 0b1111),
         speed &amp; 0xFF,
-        acceleration,        
+        acceleration,
         (absolute_axis &gt;&gt; 16) &amp; 0xFF,
         (absolute_axis &gt;&gt; 8) &amp; 0xFF,
         (absolute_axis &gt;&gt; 0) &amp; 0xFF,
     ]
-    tmp = self.set_generic(MksCommands.RUN_MOTOR_ABSOLUTE_MOTION_BY_AXIS_COMMAND, self.GENERIC_RESPONSE_LENGTH, cmd)  
-    status_int = int.from_bytes(tmp[1:2], byteorder=&#39;big&#39;)      
+    tmp = self.set_generic(MksCommands.RUN_MOTOR_ABSOLUTE_MOTION_BY_AXIS_COMMAND, self.GENERIC_RESPONSE_LENGTH, cmd)
+    status_int = int.from_bytes(tmp[1:2], byteorder=&#39;big&#39;)
     try:
         return RunMotorResult(status_int)
     except ValueError:
@@ -2266,7 +2266,7 @@ Note: If the motor is rotating more than 1000 RPM, it is not a good idea to stop
 <dt><code>can.CanError</code></dt>
 <dd>If there is an error in sending the CAN message.</dd>
 </dl>
-<p>Note: If the motor is rotating more than 1000 RPM, it is not a good idea to stop the motor inmediately.</p></div>
+<p>Note: If the motor is rotating more than 1000 RPM, it is not a good idea to stop the motor immediately.</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
@@ -2281,20 +2281,20 @@ Note: If the motor is rotating more than 1000 RPM, it is not a good idea to stop
         absolute_pulses (int): The absolute pulses, the value range is -8388607 to +8388607.
 
     Returns:
-        int: If successful, returns the status of the motor, at the end of the command execution. 
-        None: If there&#39;s an error in sending the message, a self.timeout occurs, or the response is 
+        int: If successful, returns the status of the motor, at the end of the command execution.
+        None: If there&#39;s an error in sending the message, a self.timeout occurs, or the response is
     invalid.
 
     Raises:
         can.CanError: If there is an error in sending the CAN message.
-    
-    Note: If the motor is rotating more than 1000 RPM, it is not a good idea to stop the motor inmediately.
-    &#34;&#34;&#34;        
+
+    Note: If the motor is rotating more than 1000 RPM, it is not a good idea to stop the motor immediately.
+    &#34;&#34;&#34;
     if self.is_motor_running:
-        raise motor_already_running_error(&#34;&#34;)    
+        raise motor_already_running_error(&#34;&#34;)
     self._validate_speed(speed)
     self._validate_pulses(absolute_pulses)
-  
+
     cmd = [
         (speed &gt;&gt; 8),
         speed &amp; 0xFF,
@@ -2303,13 +2303,13 @@ Note: If the motor is rotating more than 1000 RPM, it is not a good idea to stop
         (absolute_pulses &gt;&gt; 8) &amp; 0xFF,
         (absolute_pulses &gt;&gt; 0) &amp; 0xFF,
     ]
-    tmp = self.set_generic(MksCommands.RUN_MOTOR_ABSOLUTE_MOTION_BY_PULSES_COMMAND, self.GENERIC_RESPONSE_LENGTH, cmd)  
-    status_int = int.from_bytes(tmp[1:2], byteorder=&#39;big&#39;)  
+    tmp = self.set_generic(MksCommands.RUN_MOTOR_ABSOLUTE_MOTION_BY_PULSES_COMMAND, self.GENERIC_RESPONSE_LENGTH, cmd)
+    status_int = int.from_bytes(tmp[1:2], byteorder=&#39;big&#39;)
     rslt = {}
     try:
         rslt[&#39;status&#39;] = RunMotorResult(status_int)
     except ValueError:
-        raise motor_status_error(f&#34;No enum member with value {status_int}&#34;)                     
+        raise motor_status_error(f&#34;No enum member with value {status_int}&#34;)
     return rslt      </code></pre>
 </details>
 </dd>
@@ -2341,7 +2341,7 @@ acceleration (int): The acceleration in the range of 0 to 255.</p>
     &#34;&#34;&#34;
     Sets the speed mode, where the motor can be run with a fixed acceleration and speed.
 
-    Args:        
+    Args:
         direction (Direction): The direction of the motor, CCW or CW.
         speed (int): The speed in the range of 0 to 3000 RPMs.
         acceleration (int): The acceleration in the range of 0 to 255.
@@ -2350,8 +2350,8 @@ acceleration (int): The acceleration in the range of 0 to 255.</p>
         SuccessStatus: The success result of the command.
 
     Raises:
-        can.CanError: If there is an error in sending the CAN message.    
-    &#34;&#34;&#34;             
+        can.CanError: If there is an error in sending the CAN message.
+    &#34;&#34;&#34;
     self._validate_direction(direction)
     self._validate_speed(speed)
     self._validate_acceleration(acceleration)
@@ -2396,14 +2396,14 @@ addition mode. It can be read using read_encoder_value_addition method.</p>
 </dl>
 <p>Note: In this mode, the axis error is about +-15. It is suggested running with 64 subdivisions.
 <br>
-Note: If the motor is rotating more than 1000 RPM, it is not a good idea to stop the motor inmediately.</p></div>
+Note: If the motor is rotating more than 1000 RPM, it is not a good idea to stop the motor immediately.</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">def run_motor_relative_motion_by_axis(self, speed, acceleration, relative_axis):
     &#34;&#34;&#34;
-    The motor runs relative to the axis with the set acceleration and speed. The axis is the encoder value in 
+    The motor runs relative to the axis with the set acceleration and speed. The axis is the encoder value in
     addition mode. It can be read using read_encoder_value_addition method.
 
     Args:
@@ -2412,37 +2412,37 @@ Note: If the motor is rotating more than 1000 RPM, it is not a good idea to stop
         relative_axis (int): The relative axis, the value range is -8388607 to +8388607.
 
     Returns:
-        int: If successful, returns the status of the motor, at the end of the command execution. 
-        None: If there&#39;s an error in sending the message, a self.timeout occurs, or the response is 
+        int: If successful, returns the status of the motor, at the end of the command execution.
+        None: If there&#39;s an error in sending the message, a self.timeout occurs, or the response is
     invalid.
 
     Raises:
         can.CanError: If there is an error in sending the CAN message.
 
-    Note: In this mode, the axis error is about +-15. It is suggested running with 64 subdivisions.    
-    Note: If the motor is rotating more than 1000 RPM, it is not a good idea to stop the motor inmediately.
-    &#34;&#34;&#34;    
+    Note: In this mode, the axis error is about +-15. It is suggested running with 64 subdivisions.
+    Note: If the motor is rotating more than 1000 RPM, it is not a good idea to stop the motor immediately.
+    &#34;&#34;&#34;
     if self.is_motor_running:
-        raise motor_already_running_error(&#34;&#34;)    
+        raise motor_already_running_error(&#34;&#34;)
     self._validate_speed(speed)
     self._validate_acceleration(acceleration)
 
-    # TODO: Should we add a check to avoid stopping the motor inmediately when running at more than 1000 RPMs?
+    # TODO: Should we add a check to avoid stopping the motor immediately when running at more than 1000 RPMs?
     cmd = [
         ((speed &gt;&gt; 8) &amp; 0b1111),
         speed &amp; 0xFF,
-        acceleration,        
+        acceleration,
         (relative_axis &gt;&gt; 16) &amp; 0xFF,
         (relative_axis &gt;&gt; 8) &amp; 0xFF,
         (relative_axis &gt;&gt; 0) &amp; 0xFF,
     ]
-    tmp = self.set_generic(MksCommands.RUN_MOTOR_RELATIVE_MOTION_BY_AXIS_COMMAND, self.GENERIC_RESPONSE_LENGTH, cmd)  
-    status_int = int.from_bytes(tmp[1:2], byteorder=&#39;big&#39;)  
-    rslt = {}    
+    tmp = self.set_generic(MksCommands.RUN_MOTOR_RELATIVE_MOTION_BY_AXIS_COMMAND, self.GENERIC_RESPONSE_LENGTH, cmd)
+    status_int = int.from_bytes(tmp[1:2], byteorder=&#39;big&#39;)
+    rslt = {}
     try:
         rslt[&#39;status&#39;] = RunMotorResult(status_int)
     except ValueError:
-        raise motor_status_error(f&#34;No enum member with value {status_int}&#34;)                                       
+        raise motor_status_error(f&#34;No enum member with value {status_int}&#34;)
     return rslt    </code></pre>
 </details>
 </dd>
@@ -2475,7 +2475,7 @@ Note: If the motor is rotating more than 1000 RPM, it is not a good idea to stop
 <dt><code>can.CanError</code></dt>
 <dd>If there is an error in sending the CAN message.</dd>
 </dl>
-<p>Note: If the motor is rotating more than 1000 RPM, it is not a good idea to stop the motor inmediately.</p></div>
+<p>Note: If the motor is rotating more than 1000 RPM, it is not a good idea to stop the motor immediately.</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
@@ -2491,21 +2491,21 @@ Note: If the motor is rotating more than 1000 RPM, it is not a good idea to stop
         pulses (int): The motor run steps, the value range is 0 to 0xFFFFFF.
 
     Returns:
-        int: If successful, returns the status of the motor, at the end of the command execution. 
-        None: If there&#39;s an error in sending the message, a self.timeout occurs, or the response is 
+        int: If successful, returns the status of the motor, at the end of the command execution.
+        None: If there&#39;s an error in sending the message, a self.timeout occurs, or the response is
     invalid.
 
     Raises:
         can.CanError: If there is an error in sending the CAN message.
-    
-    Note: If the motor is rotating more than 1000 RPM, it is not a good idea to stop the motor inmediately.
-    &#34;&#34;&#34;        
+
+    Note: If the motor is rotating more than 1000 RPM, it is not a good idea to stop the motor immediately.
+    &#34;&#34;&#34;
     if self.is_motor_running:
-        raise motor_already_running_error(&#34;&#34;)    
+        raise motor_already_running_error(&#34;&#34;)
     self._validate_direction(direction)
     self._validate_speed(speed)
     self._validate_pulses(pulses)
-  
+
     direction_value = 0x80 if direction == Direction.CW else 0
 
     cmd = [
@@ -2516,13 +2516,13 @@ Note: If the motor is rotating more than 1000 RPM, it is not a good idea to stop
         (pulses &gt;&gt; 8) &amp; 0xFF,
         (pulses &gt;&gt; 0) &amp; 0xFF,
     ]
-    tmp = self.set_generic(MksCommands.RUN_MOTOR_RELATIVE_MOTION_BY_PULSES_COMMAND, self.GENERIC_RESPONSE_LENGTH, cmd)  
-    status_int = int.from_bytes(tmp[1:2], byteorder=&#39;big&#39;)  
+    tmp = self.set_generic(MksCommands.RUN_MOTOR_RELATIVE_MOTION_BY_PULSES_COMMAND, self.GENERIC_RESPONSE_LENGTH, cmd)
+    status_int = int.from_bytes(tmp[1:2], byteorder=&#39;big&#39;)
     rslt = {}
     try:
         rslt[&#39;status&#39;] = RunMotorResult(status_int)
     except ValueError:
-        raise motor_status_error(f&#34;No enum member with value {status_int}&#34;)                     
+        raise motor_status_error(f&#34;No enum member with value {status_int}&#34;)
     return rslt   </code></pre>
 </details>
 </dd>
@@ -2552,15 +2552,15 @@ state (SaveCleanState): The save/clean paramete state</p>
     &#34;&#34;&#34;
     Sets the save/clean parameter state in speed mode
 
-    Args:        
+    Args:
         state (SaveCleanState): The save/clean paramete state
 
     Returns:
         SuccessStatus: The success result of the command.
 
     Raises:
-        can.CanError: If there is an error in sending the CAN message.    
-    &#34;&#34;&#34;         
+        can.CanError: If there is an error in sending the CAN message.
+    &#34;&#34;&#34;
     return self.set_generic_status(MksCommands.SAVE_CLEAN_IN_SPEED_MODE_COMMAND)   </code></pre>
 </details>
 </dd>
@@ -2593,18 +2593,18 @@ any button can wake up the screen again.</p></div>
     &#34;&#34;&#34;
     Sets the auto turn off function of the screen
 
-    Args:        
+    Args:
         enable (Enable): The enable value.
 
     Returns:
         SuccessStatus: The success result of the command.
 
     Raises:
-        can.CanError: If there is an error in sending the CAN message.        
+        can.CanError: If there is an error in sending the CAN message.
 
     Note: If set to Enable, the screen will automatically turn off after about 15 seconds, and
         any button can wake up the screen again.
-    &#34;&#34;&#34;       
+    &#34;&#34;&#34;
     return self.set_generic_status(MksCommands.SET_AUTO_TURN_OFF_SCREEN_COMMAND, enable.value)</code></pre>
 </details>
 </dd>
@@ -2636,17 +2636,17 @@ bitrate (CanBitrate): The can bitrate</p>
     &#34;&#34;&#34;
     Sets the can bitrate
 
-    Args:        
+    Args:
         bitrate (CanBitrate): The can bitrate
 
     Returns:
         SuccessStatus: The success result of the command.
 
     Raises:
-        can.CanError: If there is an error in sending the CAN message.        
+        can.CanError: If there is an error in sending the CAN message.
 
     Note: Same as the &#34;CanRate&#34; option on screen.
-    &#34;&#34;&#34;        
+    &#34;&#34;&#34;
     return self.set_generic_status(MksCommands.SET_CAN_BITRATE_COMMAND, bitrate.value)</code></pre>
 </details>
 </dd>
@@ -2678,17 +2678,17 @@ can_id (int): The can id</p>
     &#34;&#34;&#34;
     Set the can id
 
-    Args:        
+    Args:
         can_id (int): The can id
 
     Returns:
         SuccessStatus: The success result of the command.
 
     Raises:
-        can.CanError: If there is an error in sending the CAN message.        
+        can.CanError: If there is an error in sending the CAN message.
 
     Note: Same as the &#34;CanID&#34; option on screen.
-    &#34;&#34;&#34;        
+    &#34;&#34;&#34;
     return self.set_generic_status(MksCommands.SET_CAN_ID, [(can_id &gt;&gt; 8) &amp; 0xF, can_id &amp; 0xFF])</code></pre>
 </details>
 </dd>
@@ -2719,8 +2719,8 @@ can_id (int): The can id</p>
         SuccessStatus: The success result of the command.
 
     Raises:
-        can.CanError: If there is an error in sending the CAN message.        
-    &#34;&#34;&#34;       
+        can.CanError: If there is an error in sending the CAN message.
+    &#34;&#34;&#34;
     return self.set_generic_status(MksCommands.SET_CURRENT_AXIS_TO_ZERO_COMMAND)   </code></pre>
 </details>
 </dd>
@@ -2750,15 +2750,15 @@ enable (EnPinEnable): The active mode.</p>
     &#34;&#34;&#34;
     Sets the active of the enable pins
 
-    Args:        
+    Args:
         enable (EnPinEnable): The active mode.
 
     Returns:
         SuccessStatus: The success result of the command.
 
     Raises:
-        can.CanError: If there is an error in sending the CAN message.        
-    &#34;&#34;&#34;        
+        can.CanError: If there is an error in sending the CAN message.
+    &#34;&#34;&#34;
     return self.set_generic_status(MksCommands.SET_EN_PIN_CONFIG_COMMAND, enable.value)     </code></pre>
 </details>
 </dd>
@@ -2792,7 +2792,7 @@ enable (EnPinEnable): The active mode.</p>
 
     Returns:
         dict: A dictionary with &#39;status&#39; key if successful, None otherwise.
-    &#34;&#34;&#34;      
+    &#34;&#34;&#34;
 
     # Check if data is an integer and convert it to a list if it is
     if isinstance(data, int):
@@ -2800,7 +2800,7 @@ enable (EnPinEnable): The active mode.</p>
     elif isinstance(data, bool):
         # Assuming _bool_to_int is a method that converts a boolean to an integer
         data = self._bool_to_int(data)
-                
+
     msg = self.create_can_msg([op_code] + data)
     # Flag to indicate whether the response has been received
     status = None
@@ -2812,16 +2812,16 @@ enable (EnPinEnable): The active mode.</p>
                 self.check_msg_crc(message)
                 if message.arbitration_id == self.can_id:
                     if not (message.data[0] == op_code and len(message.data) == response_length):
-                        logging.error(f&#34;Unexpected response length or opcode.&#34;)                        
-                    status = message.data                                                                
+                        logging.error(f&#34;Unexpected response length or opcode.&#34;)
+                    status = message.data
             except InvalidCRCError:
-                logging.error(f&#34;CRC check failed for the message: {e}&#34;)            
+                logging.error(f&#34;CRC check failed for the message: {e}&#34;)
 
-    try:        
+    try:
         self.notifier.add_listener(receive_message)
         self.bus.send(msg)
     except can.CanError as e:
-        raise CanMessageError(f&#34;Error sending message: {e}&#34;)            
+        raise CanMessageError(f&#34;Error sending message: {e}&#34;)
 
     # Wait for response (with a timeout)
     start_time = time.perf_counter()
@@ -2862,16 +2862,16 @@ enable (EnPinEnable): The active mode.</p>
 
     Returns:
         dict: Modified result dictionary with &#39;status&#39; key, None on error.
-    &#34;&#34;&#34;        
+    &#34;&#34;&#34;
     tmp = self.set_generic(op_code, MksServo.GENERIC_RESPONSE_LENGTH, data)
     if not tmp == None:
-        status_int = int.from_bytes(tmp[1:2], byteorder=&#39;big&#39;)  
+        status_int = int.from_bytes(tmp[1:2], byteorder=&#39;big&#39;)
 
-        try:            
+        try:
             return SuccessStatus(status_int)
         except ValueError:
             raise InvalidResponseError(f&#34;No enum member with value {status_int}&#34;)
-            
+
     return None</code></pre>
 </details>
 </dd>
@@ -2901,16 +2901,16 @@ group_id (int): The group id</p>
     &#34;&#34;&#34;
     Sets the group id
 
-    Args:        
+    Args:
         group_id (int): The group id
 
     Returns:
         SuccessStatus: The success result of the command.
 
     Raises:
-        can.CanError: If there is an error in sending the CAN message.        
-    
-    &#34;&#34;&#34;     
+        can.CanError: If there is an error in sending the CAN message.
+
+    &#34;&#34;&#34;
     return self.set_generic_status(MksCommands.SET_GROUP_ID_COMMAND, [(group_id &gt;&gt; 8) &amp; 0xF, group_id &amp; 0xFF])</code></pre>
 </details>
 </dd>
@@ -2942,17 +2942,17 @@ strength (HoldingStrength): Sets the holding current percentage.</p>
     &#34;&#34;&#34;
     Sets the holding current.
 
-    Args:        
+    Args:
         strength (HoldingStrength): Sets the holding current percentage.
 
     Returns:
         SuccessStatus: The success result of the command.
 
     Raises:
-        can.CanError: If there is an error in sending the CAN message.    
+        can.CanError: If there is an error in sending the CAN message.
 
     Note: Only for OPEN and CLOSE mode, vFOC mode is invalid.
-    &#34;&#34;&#34;          
+    &#34;&#34;&#34;
     return self.set_generic_status(MksCommands.SET_HOLDING_CURRENT_COMMAND, strength.value)    </code></pre>
 </details>
 </dd>
@@ -2988,7 +2988,7 @@ endLimit (Enable): The end limit enable status.</p>
     &#34;&#34;&#34;
     Sets the parameter of Home
 
-    Args:        
+    Args:
         homeTrig (EndStopLevel): The effective level of the end stop
         homeDir (Direction): The direction of go home
         homeSpeed (int): The speed of go home
@@ -2998,12 +2998,12 @@ endLimit (Enable): The end limit enable status.</p>
         SuccessStatus: The success result of the command.
 
     Raises:
-        can.CanError: If there is an error in sending the CAN message.        
+        can.CanError: If there is an error in sending the CAN message.
 
     Note: Same as the &#34;HmTrig&#34;, &#34;HmDir&#34; and &#34;HmSpeed&#34; options on screen.
 
     Note: When first time to using the endLimit function or changing the limit paramters, it is necessary to go home.
-    &#34;&#34;&#34;       
+    &#34;&#34;&#34;
     return self.set_generic_status(MksCommands.SET_HOME_COMMAND, [homeTrig, homeDir, (homeSpeed &gt;&gt; 8) &amp; 0xF, homeSpeed &amp; 0xFF, endLimit])</code></pre>
 </details>
 </dd>
@@ -3033,15 +3033,15 @@ enable (Enable): The status of the key lock</p>
     &#34;&#34;&#34;
     Set the key lock
 
-    Args:        
+    Args:
         enable (Enable): The status of the key lock
 
     Returns:
         SuccessStatus: The success result of the command.
 
     Raises:
-        can.CanError: If there is an error in sending the CAN message.            
-    &#34;&#34;&#34;       
+        can.CanError: If there is an error in sending the CAN message.
+    &#34;&#34;&#34;
     return self.set_generic_status(MksCommands.SET_KEY_LOCK_ENABLE_COMMAND, enable.value)</code></pre>
 </details>
 </dd>
@@ -3081,15 +3081,15 @@ enable (Enable): The enable status.</p>
     Right limit -&gt; Dir port.
     The com port must be connected to the corresponding high level.
 
-    Args:        
+    Args:
         enable (Enable): The enable status.
 
     Returns:
         SuccessStatus: The success result of the command.
 
     Raises:
-        can.CanError: If there is an error in sending the CAN message.            
-    &#34;&#34;&#34;       
+        can.CanError: If there is an error in sending the CAN message.
+    &#34;&#34;&#34;
     return self.set_generic_status(MksCommands.SET_LIMIT_PORT_REMAP_COMMAND, enable.value)   </code></pre>
 </details>
 </dd>
@@ -3124,7 +3124,7 @@ direction (Direction): The direction</p>
     Sets mode 0 where the motor can automatically return to the 0 point position when power on.
     The maximum angle is 359 degrees.
 
-    Args:        
+    Args:
         mode (Mode0): The mode
         enable (Enable): The enable status
         speed (int): Speed. 0: slowest, 4: fastest
@@ -3134,8 +3134,8 @@ direction (Direction): The direction</p>
         SuccessStatus: The success result of the command.
 
     Raises:
-        can.CanError: If there is an error in sending the CAN message.            
-    &#34;&#34;&#34;       
+        can.CanError: If there is an error in sending the CAN message.
+    &#34;&#34;&#34;
     cmd = [mode, enable.value, speed, direction.value]
     return self.set_generic_status(MksCommands.SET_MODE0_COMMAND, [mode, enable, speed, direction])   </code></pre>
 </details>
@@ -3168,17 +3168,17 @@ direction (Direction): The direction</p>
     &#34;&#34;&#34;
     Sets the direction of motor rotation
 
-    Args:        
+    Args:
         direction (Direction): The direction
 
     Returns:
         SuccessStatus: The success result of the command.
 
     Raises:
-        can.CanError: If there is an error in sending the CAN message.        
+        can.CanError: If there is an error in sending the CAN message.
 
     Note: Only for pulse interface, the direction of serial interface is set by command.
-    &#34;&#34;&#34;          
+    &#34;&#34;&#34;
     return self.set_generic_status(MksCommands.SET_MOTOR_ROTATION_DIRECTION, direction.value)</code></pre>
 </details>
 </dd>
@@ -3210,17 +3210,17 @@ enable (Enable): The enable value.</p>
     &#34;&#34;&#34;
     Sets the motor shaft protection
 
-    Args:        
+    Args:
         enable (Enable): The enable value.
 
     Returns:
         SuccessStatus: The success result of the command.
 
     Raises:
-        can.CanError: If there is an error in sending the CAN message.        
+        can.CanError: If there is an error in sending the CAN message.
 
     Note: Same as the &#34;Protect&#34; option on screen.
-    &#34;&#34;&#34;     
+    &#34;&#34;&#34;
     return self.set_generic_status(MksCommands.SET_MOTOR_SHAFT_LOCKED_ROTOR_PROTECTION_COMMAND, enable.value)</code></pre>
 </details>
 </dd>
@@ -3253,18 +3253,18 @@ active (Enable): </p>
     &#34;&#34;&#34;
     Sets the slave respond and active
 
-    Args:        
-        respon (Enable): 
-        active (Enable): 
+    Args:
+        respon (Enable):
+        active (Enable):
 
     Returns:
         SuccessStatus: The success result of the command.
 
     Raises:
-        can.CanError: If there is an error in sending the CAN message.        
+        can.CanError: If there is an error in sending the CAN message.
 
     Note: Not implemented
-    &#34;&#34;&#34;         
+    &#34;&#34;&#34;
     print (&#34;Not implemented&#34;)</code></pre>
 </details>
 </dd>
@@ -3296,17 +3296,17 @@ enable (Enable): The enable value for the interpolation..</p>
     &#34;&#34;&#34;
     Sets the subdivision interpolation function.
 
-    Args:        
+    Args:
         enable (Enable): The enable value for the interpolation..
 
     Returns:
         SuccessStatus: The success result of the command.
 
     Raises:
-        can.CanError: If there is an error in sending the CAN message.        
+        can.CanError: If there is an error in sending the CAN message.
 
     Note: Same as the &#34;Mplyer&#34; option on screen.
-    &#34;&#34;&#34;       
+    &#34;&#34;&#34;
     return self.set_generic_status(MksCommands.SET_SUBDIVISION_INTERPOLATION_COMMAND, enable.value)</code></pre>
 </details>
 </dd>
@@ -3336,15 +3336,15 @@ mstep (int): The subdivisions</p>
     &#34;&#34;&#34;
     Sets the subdivisions
 
-    Args:        
+    Args:
         mstep (int): The subdivisions
 
     Returns:
         SuccessStatus: The success result of the command.
 
     Raises:
-        can.CanError: If there is an error in sending the CAN message.        
-    &#34;&#34;&#34;      
+        can.CanError: If there is an error in sending the CAN message.
+    &#34;&#34;&#34;
     return self.set_generic_status(MksCommands.SET_SUBDIVISIONS_COMMAND, mstep)    </code></pre>
 </details>
 </dd>
@@ -3376,17 +3376,17 @@ mode (WorkMode): The mode of the servo</p>
     &#34;&#34;&#34;
     Set the working mode of the servo.
 
-    Args:        
+    Args:
         mode (WorkMode): The mode of the servo
 
     Returns:
         SuccessStatus: The success result of the command.
 
     Raises:
-        can.CanError: If there is an error in sending the CAN message.    
+        can.CanError: If there is an error in sending the CAN message.
 
     Note: Setting CrOpen, CrClose or CrvFoc will lose communication over CAN.
-    &#34;&#34;&#34;       
+    &#34;&#34;&#34;
     return self.set_generic_status(MksCommands.SET_WORK_MODE_COMMAND, mode.value)</code></pre>
 </details>
 </dd>
@@ -3418,17 +3418,17 @@ current (int): The working current in miliamps.</p>
     &#34;&#34;&#34;
     Sets the working current.
 
-    Args:        
+    Args:
         current (int): The working current in miliamps.
 
     Returns:
         SuccessStatus: The success result of the command.
 
     Raises:
-        can.CanError: If there is an error in sending the CAN message.    
+        can.CanError: If there is an error in sending the CAN message.
 
     Note: The maximum current for Servo42D, 28D and 35D is 3000 mA. The maximum current for servod57d is 5200 ma.
-    &#34;&#34;&#34;      
+    &#34;&#34;&#34;
     self._validate_current(current)
     return self.set_generic_status(MksCommands.SET_WORKING_CURRENT_COMMAND, [(current &gt;&gt; 8) &amp; 0xFF, current &amp; 0xFF])    </code></pre>
 </details>
@@ -3443,8 +3443,8 @@ current (int): The working current in miliamps.</p>
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">def specialized_state(self, op_code, status_enum, status_enum_exception):
-    tmp = self.set_generic(op_code, self.GENERIC_RESPONSE_LENGTH, [op_code])  
-    status_int = int.from_bytes(tmp[1:2], byteorder=&#39;big&#39;)  
+    tmp = self.set_generic(op_code, self.GENERIC_RESPONSE_LENGTH, [op_code])
+    status_int = int.from_bytes(tmp[1:2], byteorder=&#39;big&#39;)
     try:
         return status_enum(status_int)
     except ValueError:
@@ -3481,9 +3481,9 @@ current (int): The working current in miliamps.</p>
         CalibrationResult: The success result of the command. It should be &#34;CalibratedSuccess&#34; or &#34;CalibratingFail&#34;.
 
     Raises:
-        can.CanError: If there is an error in sending the CAN message.    
+        can.CanError: If there is an error in sending the CAN message.
         calibration_timeout_error: If the calibration took longer than the expected time.
-    &#34;&#34;&#34;     
+    &#34;&#34;&#34;
     if self._calibration_status == CalibrationResult.Unkown:
         raise calibration_not_running(&#34;&#34;)
 
@@ -3492,8 +3492,8 @@ current (int): The working current in miliamps.</p>
         time.sleep(0.1)  # Small sleep to prevent busy waiting
 
     if not self._calibration_status == CalibrationResult.CalibratedSuccess and not self._calibration_status == CalibrationResult.CalibratingFail:
-        raise calibration_timeout_error(&#34;&#34;)      
-    
+        raise calibration_timeout_error(&#34;&#34;)
+
     return self._calibration_status</code></pre>
 </details>
 </dd>
@@ -3520,19 +3520,19 @@ timeout (double): Maximum number of seconds to wait for the motor to stop.
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def wait_for_motor_idle(self, timeout):    
+<pre><code class="python">def wait_for_motor_idle(self, timeout):
     &#34;&#34;&#34;
     Waits until the motor stops running or the timeout time is meet.
 
-    Args:        
-        timeout (double): Maximum number of seconds to wait for the motor to stop.        
+    Args:
+        timeout (double): Maximum number of seconds to wait for the motor to stop.
 
     Returns:
         boolean: The running state of the motor at the end of this method.
 
     Raises:
-        can.CanError: If there is an error in sending the CAN message.    
-    &#34;&#34;&#34;     
+        can.CanError: If there is an error in sending the CAN message.
+    &#34;&#34;&#34;
     start_time = time.perf_counter()
     while (time.perf_counter() - start_time &lt; timeout) and self.is_motor_running():
         time.sleep(0.1)  # Small sleep to prevent busy waiting

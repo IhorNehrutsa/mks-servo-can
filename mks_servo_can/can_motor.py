@@ -206,7 +206,7 @@ def run_motor_relative_motion_by_pulses(self, direction: Direction, speed, accel
     Raises:
         can.CanError: If there is an error in sending the CAN message.
 
-    Note: If the motor is rotating more than 1000 RPM, it is not a good idea to stop the motor inmediately.
+    Note: If the motor is rotating more than 1000 RPM, it is not a good idea to stop the motor immediately.
     """
     if self.is_motor_running():
         raise motor_already_running_error("")
@@ -255,7 +255,7 @@ def run_motor_absolute_motion_by_pulses(self, speed, acceleration, absolute_puls
     Raises:
         can.CanError: If there is an error in sending the CAN message.
 
-    Note: If the motor is rotating more than 1000 RPM, it is not a good idea to stop the motor inmediately.
+    Note: If the motor is rotating more than 1000 RPM, it is not a good idea to stop the motor immediately.
     """
     if self.is_motor_running():
         raise motor_already_running_error("")
@@ -303,7 +303,7 @@ def run_motor_relative_motion_by_axis(self, speed, acceleration, relative_axis):
         can.CanError: If there is an error in sending the CAN message.
 
     Note: In this mode, the axis error is about +-15. It is suggested running with 64 subdivisions.
-    Note: If the motor is rotating more than 1000 RPM, it is not a good idea to stop the motor inmediately.
+    Note: If the motor is rotating more than 1000 RPM, it is not a good idea to stop the motor immediately.
     """
     if self.is_motor_running():
         raise motor_already_running_error("")
@@ -311,7 +311,7 @@ def run_motor_relative_motion_by_axis(self, speed, acceleration, relative_axis):
     self._validate_acceleration(acceleration)
     self._validate_axis(relative_axis)
 
-    # TODO: Should we add a check to avoid stopping the motor inmediately when running at more than 1000 RPMs?
+    # TODO: Should we add a check to avoid stopping the motor immediately when running at more than 1000 RPMs?
     cmd = [
         ((speed >> 8) & 0b1111),
         speed & 0xFF,
@@ -353,7 +353,7 @@ def run_motor_absolute_motion_by_axis(self, speed, acceleration, absolute_axis):
         can.CanError: If there is an error in sending the CAN message.
 
     Note: In this mode, the axis error is about +-15. It is suggested running with 64 subdivisions.
-    Note: If the motor is rotating more than 1000 RPM, it is not a good idea to stop the motor inmediately.
+    Note: If the motor is rotating more than 1000 RPM, it is not a good idea to stop the motor immediately.
     """
     if self.is_motor_running():
         raise motor_already_running_error("")
@@ -361,7 +361,7 @@ def run_motor_absolute_motion_by_axis(self, speed, acceleration, absolute_axis):
     self._validate_acceleration(acceleration)
     self._validate_axis(absolute_axis)
 
-    # TODO: Should we add a check to avoid stopping the motor inmediately when running at more than 1000 RPMs?
+    # TODO: Should we add a check to avoid stopping the motor immediately when running at more than 1000 RPMs?
     cmd = [
         ((speed >> 8) & 0b1111),
         speed & 0xFF,
